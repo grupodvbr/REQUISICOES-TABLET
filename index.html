@@ -70,13 +70,19 @@
       font-weight: bold;
     }
 
-    .filtros .clear-btn {
+    .clear-btn {
       position: absolute;
-      right: 10px;
-      top: 37px;
-      color: red;
+      right: 8px;
+      top: 36px;
+      color: #e74c3c;
       cursor: pointer;
-      font-size: 1.1em;
+      font-size: 1.3em;
+      user-select: none;
+      transition: transform 0.2s ease;
+    }
+
+    .clear-btn:hover {
+      transform: scale(1.2);
     }
 
     .grupo {
