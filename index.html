@@ -52,6 +52,7 @@
       flex-direction: column;
       font-weight: bold;
       min-width: 160px;
+      position: relative;
     }
 
     .filtros input,
@@ -67,6 +68,15 @@
       background: #f0f0f0;
       cursor: pointer;
       font-weight: bold;
+    }
+
+    .filtros .clear-btn {
+      position: absolute;
+      right: 10px;
+      top: 37px;
+      color: red;
+      cursor: pointer;
+      font-size: 1.1em;
     }
 
     .grupo {
@@ -172,7 +182,8 @@
         <input type="date" id="filtroDataFim">
       </label>
       <label style="flex: 2;">Palavra-chave:
-        <input type="text" id="filtroPalavra" placeholder="Buscar item ou observação">
+        <input type="text" id="filtroPalavra" placeholder="Buscar item ou observação" style="padding-right: 30px;">
+        <span class="clear-btn" onclick="limparBusca()">❌</span>
       </label>
     </div>
 
@@ -286,6 +297,11 @@
 
       const spanLapis = linha.querySelector('span:nth-child(4)');
       spanLapis.innerHTML = `✏️ ${spanLapis.textContent.split('✏️')[1].split('—')[0].trim()} — <span class="marcacao">${status}</span>`;
+    }
+
+    function limparBusca() {
+      document.getElementById('filtroPalavra').value = '';
+      filtrar();
     }
 
     carregarDados();
