@@ -67,6 +67,11 @@
       position: relative;
     }
 
+    .linha {
+      color: #333;
+      transition: opacity 0.3s;
+    }
+
     .linha strong {
       display: block;
     }
@@ -75,6 +80,11 @@
       display: block;
       font-size: 0.95em;
       margin-top: 3px;
+    }
+
+    .linha.concluida {
+      color: #888;
+      opacity: 0.5;
     }
 
     .flags {
@@ -110,14 +120,14 @@
 
     .marcacao {
       font-size: 0.9em;
-      margin-top: 3px;
+      margin-left: 6px;
       font-style: italic;
       color: #555;
     }
-
   </style>
 </head>
 <body>
+
   <h1>Requisições</h1>
 
   <div class="filtros">
@@ -202,16 +212,17 @@
         ul.className = 'itens';
 
         agrupado[grupo].forEach((l) => {
-          const id = btoa(l[0] + l[1]); // id único
+          const id = btoa(l[0] + l[1]);
           const statusSalvo = localStorage.getItem("flag-" + id);
+          const linhaClasse = statusSalvo ? 'linha concluida' : 'linha';
 
           const li = document.createElement('li');
           li.innerHTML = `
-            <div class="linha">
+            <div class="${linhaClasse}">
               <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
               <span>📍 ${l[4]} — 🙋 ${l[5]}</span>
               <span>🕒 ${new Date(l[0]).toLocaleString('pt-BR')}</span>
-              <span>✏️ ${l[6]} ${statusSalvo ? `— <span class="marcacao">${statusSalvo}</span>` : ''}</span>
+              <span>✏️ ${l[6]} ${statusSalvo ? `<span class="marcacao">${statusSalvo}</span>` : ''}</span>
             </div>
             <div class="flags">
               <span class="flag entregue ${statusSalvo ? 'desativado' : ''}" onclick="marcar('${id}', 'Entregue', this)">✅</span>
@@ -233,15 +244,16 @@
 
       localStorage.setItem("flag-" + id, status);
 
-      // Desativar ícones
-      const container = el.closest('li');
-      container.querySelectorAll('.flag').forEach(f => {
+      const li = el.closest('li');
+      li.querySelectorAll('.flag').forEach(f => {
         f.classList.add('desativado');
         f.onclick = null;
       });
 
-      // Atualizar exibição do lápis
-      const spanLapis = container.querySelector('.linha span:nth-child(4)');
+      const linha = li.querySelector('.linha');
+      linha.classList.add('concluida');
+
+      const spanLapis = linha.querySelector('span:nth-child(4)');
       spanLapis.innerHTML = `✏️ ${spanLapis.textContent.split('✏️')[1].split('—')[0].trim()} — <span class="marcacao">${status}</span>`;
     }
 
