@@ -12,9 +12,22 @@
       padding: 20px;
     }
 
-    h1 {
-      text-align: center;
+    .topo {
+      display: flex;
+      align-items: center;
+      gap: 16px;
       margin-bottom: 20px;
+    }
+
+    .topo img {
+      height: 50px;
+      width: auto;
+    }
+
+    .topo h1 {
+      margin: 0;
+      font-size: 1.8em;
+      flex-grow: 1;
     }
 
     .filtros {
@@ -128,11 +141,10 @@
 </head>
 <body>
 
-  <div style="text-align:center; margin-bottom: 10px;">
-    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo" class="logo" style="max-width:160px; height:auto;" />
+  <div class="topo">
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo" />
+    <h1>REQUISIÇÕES RECEBIDAS</h1>
   </div>
-
-  <h1>REQUISIÇÕES RECEBIDAS</h1>
 
   <div class="filtros">
     <label>Data de:
@@ -243,7 +255,6 @@
 
     function marcar(id, status, el) {
       if (el.classList.contains('desativado')) return;
-
       if (!confirm(`Deseja marcar como "${status}"?`)) return;
 
       localStorage.setItem("flag-" + id, status);
