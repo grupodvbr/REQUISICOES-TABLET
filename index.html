@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Requisições</title>
   <style>
     body {
@@ -32,7 +32,9 @@
       min-width: 140px;
     }
 
-    .filtros input, .filtros select, .filtros button {
+    .filtros input,
+    .filtros select,
+    .filtros button {
       padding: 10px;
       font-size: 1em;
       border-radius: 6px;
@@ -44,7 +46,7 @@
       border-radius: 6px;
       padding: 15px;
       margin-bottom: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     }
 
     .grupo h3 {
@@ -64,15 +66,7 @@
     ul.itens li {
       border-bottom: 1px solid #eee;
       padding: 10px;
-      cursor: pointer;
-    }
-
-    ul.itens li:last-child {
-      border-bottom: none;
-    }
-
-    ul.itens li:hover {
-      background: #f0f8ff;
+      position: relative;
     }
 
     .linha strong {
@@ -85,18 +79,39 @@
       margin-top: 3px;
     }
 
-    .status {
-      font-weight: bold;
+    .flags {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 8px;
     }
 
-    .feito {
-      background: #d7ffd9 !important;
-      color: #2e7d32;
+    .flag {
+      font-size: 1.3em;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .flag:hover {
+      transform: scale(1.2);
+    }
+
+    .entregue {
+      color: green;
+    }
+
+    .faltou {
+      color: red;
+    }
+
+    .desativado {
+      opacity: 0.5;
+      cursor: default;
     }
   </style>
 </head>
 <body>
-
   <h1>Requisições</h1>
 
   <div class="filtros">
@@ -180,18 +195,23 @@
         const ul = document.createElement('ul');
         ul.className = 'itens';
 
-        agrupado[grupo].forEach(l => {
+        agrupado[grupo].forEach((l, idx) => {
           const li = document.createElement('li');
+          const id = btoa(l[0] + l[1]); // id único
+
           li.innerHTML = `
             <div class="linha">
               <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
               <span>📍 ${l[4]} — 🙋 ${l[5]}</span>
               <span>🕒 ${new Date(l[0]).toLocaleString('pt-BR')}</span>
               <span>✏️ ${l[6]}</span>
-              <span class="status">Status: ${(l[7].toLowerCase() === 'processando' ? 'PENDENTE' : l[7])}</span>
+            </div>
+            <div class="flags">
+              <span class="flag entregue" onclick="confirmarFlag(${JSON.stringify(l)}, 'Entregue', '${id}', this)">✅</span>
+              <span class="flag faltou" onclick="confirmarFlag(${JSON.stringify(l)}, 'Faltou', '${id}', this)">❌</span>
             </div>
           `;
-          li.onclick = () => perguntarAcao(l, li);
+
           ul.appendChild(li);
         });
 
@@ -200,13 +220,8 @@
       }
     }
 
-    function perguntarAcao(dados, elemento) {
-      const opcao = prompt("Deseja marcar como:\n1 - Entregue\n2 - Faltou\n\nDigite o número correspondente:");
-
-      let status = "";
-      if (opcao === "1") status = "Entregue";
-      else if (opcao === "2") status = "Faltou";
-      else return; // cancelado ou inválido
+    function confirmarFlag(dados, status, id, elemento) {
+      if (!confirm(`Deseja marcar este item como "${status}"?`)) return;
 
       const payload = {
         dataHoraOriginal: dados[0],
@@ -225,16 +240,18 @@
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' }
       })
-      .then(() => {
-        elemento.classList.add('feito');
-        elemento.innerHTML += `<span>✔️ Marcado como: ${status}</span>`;
-        elemento.onclick = null;
-      })
-      .catch(() => alert("Erro ao registrar status."));
+        .then(() => {
+          const li = elemento.closest('li');
+          li.querySelectorAll('.flag').forEach(f => {
+            f.classList.add('desativado');
+            f.onclick = null;
+          });
+          elemento.style.transform = "scale(1.3)";
+        })
+        .catch(() => alert("Erro ao registrar status."));
     }
 
     carregarDados();
   </script>
-
 </body>
 </html>
