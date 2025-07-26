@@ -32,9 +32,7 @@
       min-width: 140px;
     }
 
-    .filtros input,
-    .filtros select,
-    .filtros button {
+    .filtros input, .filtros select, .filtros button {
       padding: 10px;
       font-size: 1em;
       border-radius: 6px;
@@ -46,7 +44,7 @@
       border-radius: 6px;
       padding: 15px;
       margin-bottom: 20px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
 
     .grupo h3 {
@@ -109,6 +107,14 @@
       opacity: 0.5;
       cursor: default;
     }
+
+    .marcacao {
+      font-size: 0.9em;
+      margin-top: 3px;
+      font-style: italic;
+      color: #555;
+    }
+
   </style>
 </head>
 <body>
@@ -195,23 +201,23 @@
         const ul = document.createElement('ul');
         ul.className = 'itens';
 
-        agrupado[grupo].forEach((l, idx) => {
-          const li = document.createElement('li');
+        agrupado[grupo].forEach((l) => {
           const id = btoa(l[0] + l[1]); // id único
+          const statusSalvo = localStorage.getItem("flag-" + id);
 
+          const li = document.createElement('li');
           li.innerHTML = `
             <div class="linha">
               <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
               <span>📍 ${l[4]} — 🙋 ${l[5]}</span>
               <span>🕒 ${new Date(l[0]).toLocaleString('pt-BR')}</span>
-              <span>✏️ ${l[6]}</span>
+              <span>✏️ ${l[6]} ${statusSalvo ? `— <span class="marcacao">${statusSalvo}</span>` : ''}</span>
             </div>
             <div class="flags">
-              <span class="flag entregue" onclick="confirmarFlag(${JSON.stringify(l)}, 'Entregue', '${id}', this)">✅</span>
-              <span class="flag faltou" onclick="confirmarFlag(${JSON.stringify(l)}, 'Faltou', '${id}', this)">❌</span>
+              <span class="flag entregue ${statusSalvo ? 'desativado' : ''}" onclick="marcar('${id}', 'Entregue', this)">✅</span>
+              <span class="flag faltou ${statusSalvo ? 'desativado' : ''}" onclick="marcar('${id}', 'Faltou', this)">❌</span>
             </div>
           `;
-
           ul.appendChild(li);
         });
 
@@ -220,35 +226,23 @@
       }
     }
 
-    function confirmarFlag(dados, status, id, elemento) {
-      if (!confirm(`Deseja marcar este item como "${status}"?`)) return;
+    function marcar(id, status, el) {
+      if (el.classList.contains('desativado')) return;
 
-      const payload = {
-        dataHoraOriginal: dados[0],
-        item: dados[1],
-        unidade: dados[2],
-        quantidade: dados[3],
-        setor: dados[4],
-        solicitante: dados[5],
-        observacoes: dados[6],
-        statusOriginal: dados[7],
-        novoStatus: status
-      };
+      if (!confirm(`Deseja marcar como "${status}"?`)) return;
 
-      fetch("https://script.google.com/macros/s/AKfycbxnuFAAJLiThcP99gpgk-EhHIJ2N2YOXjpi7jVROHq6ZqniAkcXlI2h8uj16oTQHsVWnQ/exec", {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'application/json' }
-      })
-        .then(() => {
-          const li = elemento.closest('li');
-          li.querySelectorAll('.flag').forEach(f => {
-            f.classList.add('desativado');
-            f.onclick = null;
-          });
-          elemento.style.transform = "scale(1.3)";
-        })
-        .catch(() => alert("Erro ao registrar status."));
+      localStorage.setItem("flag-" + id, status);
+
+      // Desativar ícones
+      const container = el.closest('li');
+      container.querySelectorAll('.flag').forEach(f => {
+        f.classList.add('desativado');
+        f.onclick = null;
+      });
+
+      // Atualizar exibição do lápis
+      const spanLapis = container.querySelector('.linha span:nth-child(4)');
+      spanLapis.innerHTML = `✏️ ${spanLapis.textContent.split('✏️')[1].split('—')[0].trim()} — <span class="marcacao">${status}</span>`;
     }
 
     carregarDados();
