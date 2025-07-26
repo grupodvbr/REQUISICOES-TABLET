@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Requisições - Tablet</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .filtros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .filtros label {
+      display: flex;
+      flex-direction: column;
+      font-weight: bold;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .filtros input, .filtros select, .filtros button {
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .grupo {
+      margin-top: 20px;
+    }
+
+    .grupo h3 {
+      background: #007bff;
+      color: white;
+      padding: 8px;
+      border-radius: 6px;
+      margin: 0;
+    }
+
+    .card {
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .card span {
+      display: block;
+      font-size: 0.95em;
+      margin: 2px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Requisições</h1>
+
+  <div class="filtros">
+    <label>Data de:
+      <input type="date" id="filtroDataInicio">
+    </label>
+    <label>Hora Inicial:
+      <input type="time" id="filtroHoraInicio">
+    </label>
+    <label>Data até:
+      <input type="date" id="filtroDataFim">
+    </label>
+    <label>Hora Final:
+      <input type="time" id="filtroHoraFim">
+    </label>
+    <label>Palavra-chave:
+      <input type="text" id="filtroPalavra" placeholder="Buscar item ou observação">
+    </label>
+    <label>Visualizar por:
+      <select id="modoVisualizacao" onchange="filtrar()">
+        <option value="setor">Setor</option>
+        <option value="solicitante">Solicitante</option>
+      </select>
+    </label>
+    <button onclick="filtrar()">🔍 Filtrar</button>
+  </div>
+
+  <div id="conteudoRequisicoes"></div>
+
+  <script>
+    let requisicoes = [];
+
+    async function carregarDados() {
+      const res = await fetch('https://script.google.com/macros/s/AKfycbzjVWXyGuwLDEfqNwgJppU2Yvo3_r_L7wbD1-AXfd3lztOUlq5zbKTQ0QCP7IknVae4TA/exec');
+      const dados = await res.json();
+
+      requisicoes = dados.map(l => l.map(c => (c || '').toString().trim()));
+      filtrar();
+    }
+
+    function filtrar() {
+      const inicioData = document.getElementById('filtroDataInicio').value;
+      const fimData = document.getElementById('filtroDataFim').value;
+      const inicioHora = document.getElementById('filtroHoraInicio').value;
+      const fimHora = document.getElementById('filtroHoraFim').value;
+      const palavra = document.getElementById('filtroPalavra').value.toLowerCase();
+      const modo = document.getElementById('modoVisualizacao').value;
+
+      let lista = requisicoes.filter(l => {
+        const dataHora = new Date(l[0]);
+        if (inicioData) {
+          const d = new Date(`${inicioData}T${inicioHora || '00:00'}`);
+          if (dataHora < d) return false;
+        }
+        if (fimData) {
+          const d = new Date(`${fimData}T${fimHora || '23:59'}`);
+          if (dataHora > d) return false;
+        }
+        if (palavra) {
+          const item = l[1].toLowerCase();
+          const obs = (l[6] || '').toLowerCase();
+          if (!item.includes(palavra) && !obs.includes(palavra)) return false;
+        }
+        return true;
+      });
+
+      const agrupado = {};
+      lista.forEach(l => {
+        const chave = modo === 'setor' ? l[4] : l[5];
+        if (!agrupado[chave]) agrupado[chave] = [];
+        agrupado[chave].push(l);
+      });
+
+      const container = document.getElementById('conteudoRequisicoes');
+      container.innerHTML = '';
+
+      for (const grupo in agrupado) {
+        const divGrupo = document.createElement('div');
+        divGrupo.className = 'grupo';
+        divGrupo.innerHTML = `<h3>${grupo}</h3>`;
+        agrupado[grupo].forEach(l => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
+            <span>📍 ${l[4]} — 🙋 ${l[5]}</span>
+            <span>🕒 ${new Date(l[0]).toLocaleString('pt-BR')}</span>
+            <span>✏️ ${l[6]}</span>
+            <span><b>Status:</b> ${(l[7].toLowerCase() === 'processando' ? 'PENDENTE' : l[7])}</span>
+          `;
+          divGrupo.appendChild(card);
+        });
+        container.appendChild(divGrupo);
+      }
+    }
+
+    carregarDados();
+  </script>
+</body>
+</html>
