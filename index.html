@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Requisições - Tablet</title>
+  <title>Requisições</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0; padding: 20px;
       background: #f5f5f5;
-      color: #333;
+      margin: 0;
+      padding: 20px;
     }
 
     h1 {
@@ -55,61 +55,48 @@
       border-radius: 6px 6px 0 0;
     }
 
-    .item {
-      border-bottom: 1px solid #ddd;
-      padding: 10px 0;
+    ul.itens {
+      list-style: none;
+      padding: 0;
+      margin: 0;
     }
 
-    .item:last-child {
+    ul.itens li {
+      border-bottom: 1px solid #eee;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    ul.itens li:last-child {
       border-bottom: none;
     }
 
-    .item strong {
-      font-size: 1em;
+    ul.itens li:hover {
+      background: #f0f8ff;
     }
 
-    .item span {
+    .linha strong {
+      display: block;
+    }
+
+    .linha span {
       display: block;
       font-size: 0.95em;
-      margin-top: 4px;
+      margin-top: 3px;
     }
 
     .status {
       font-weight: bold;
-      margin-top: 5px;
-    }
-
-    .acoes {
-      margin-top: 8px;
-    }
-
-    .acoes button {
-      padding: 6px 12px;
-      margin-right: 8px;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .entregue {
-      background: #4caf50;
-      color: white;
-    }
-
-    .faltou {
-      background: #f44336;
-      color: white;
     }
 
     .feito {
-      background: #ccc !important;
-      color: #333 !important;
-      cursor: default;
+      background: #d7ffd9 !important;
+      color: #2e7d32;
     }
   </style>
 </head>
 <body>
+
   <h1>Requisições</h1>
 
   <div class="filtros">
@@ -189,29 +176,38 @@
         const divGrupo = document.createElement('div');
         divGrupo.className = 'grupo';
         divGrupo.innerHTML = `<h3>${grupo}</h3>`;
-        agrupado[grupo].forEach(l => {
-          const item = document.createElement('div');
-          item.className = 'item';
-          const id = btoa(l[0] + l[1]); // ID único para o botão
 
-          item.innerHTML = `
-            <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
-            <span>📍 ${l[4]} — 🙋 ${l[5]}</span>
-            <span>🕒 ${new Date(l[0]).toLocaleString('pt-BR')}</span>
-            <span>✏️ ${l[6]}</span>
-            <span class="status">Status: ${(l[7].toLowerCase() === 'processando' ? 'PENDENTE' : l[7])}</span>
-            <div class="acoes">
-              <button class="entregue" id="ok-${id}" onclick='marcarStatus(${JSON.stringify(l)}, "Entregue", "${id}")'>✅ Entregue</button>
-              <button class="faltou" id="fail-${id}" onclick='marcarStatus(${JSON.stringify(l)}, "Faltou", "${id}")'>❌ Faltou</button>
+        const ul = document.createElement('ul');
+        ul.className = 'itens';
+
+        agrupado[grupo].forEach(l => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <div class="linha">
+              <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
+              <span>📍 ${l[4]} — 🙋 ${l[5]}</span>
+              <span>🕒 ${new Date(l[0]).toLocaleString('pt-BR')}</span>
+              <span>✏️ ${l[6]}</span>
+              <span class="status">Status: ${(l[7].toLowerCase() === 'processando' ? 'PENDENTE' : l[7])}</span>
             </div>
           `;
-          divGrupo.appendChild(item);
+          li.onclick = () => perguntarAcao(l, li);
+          ul.appendChild(li);
         });
+
+        divGrupo.appendChild(ul);
         container.appendChild(divGrupo);
       }
     }
 
-    function marcarStatus(dados, novoStatus, id) {
+    function perguntarAcao(dados, elemento) {
+      const opcao = prompt("Deseja marcar como:\n1 - Entregue\n2 - Faltou\n\nDigite o número correspondente:");
+
+      let status = "";
+      if (opcao === "1") status = "Entregue";
+      else if (opcao === "2") status = "Faltou";
+      else return; // cancelado ou inválido
+
       const payload = {
         dataHoraOriginal: dados[0],
         item: dados[1],
@@ -221,7 +217,7 @@
         solicitante: dados[5],
         observacoes: dados[6],
         statusOriginal: dados[7],
-        novoStatus: novoStatus
+        novoStatus: status
       };
 
       fetch("https://script.google.com/macros/s/AKfycbxnuFAAJLiThcP99gpgk-EhHIJ2N2YOXjpi7jVROHq6ZqniAkcXlI2h8uj16oTQHsVWnQ/exec", {
@@ -230,17 +226,15 @@
         headers: { 'Content-Type': 'application/json' }
       })
       .then(() => {
-        document.getElementById("ok-" + id).classList.add("feito");
-        document.getElementById("fail-" + id).classList.add("feito");
-        document.getElementById("ok-" + id).disabled = true;
-        document.getElementById("fail-" + id).disabled = true;
-        document.getElementById("ok-" + id).innerText = "✔️ Enviado";
-        document.getElementById("fail-" + id).innerText = "✔️ Enviado";
+        elemento.classList.add('feito');
+        elemento.innerHTML += `<span>✔️ Marcado como: ${status}</span>`;
+        elemento.onclick = null;
       })
-      .catch(() => alert("Erro ao marcar status."));
+      .catch(() => alert("Erro ao registrar status."));
     }
 
     carregarDados();
   </script>
+
 </body>
 </html>
