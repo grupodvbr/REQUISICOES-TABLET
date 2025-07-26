@@ -33,9 +33,17 @@
 
     .filtros {
       display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+
+    .linha-filtros {
+      display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 20px;
+      width: 100%;
       justify-content: center;
     }
 
@@ -156,24 +164,29 @@
   </div>
 
   <div class="filtros">
-    <label>Data de:
-      <input type="date" id="filtroDataInicio">
-    </label>
-    <label>Data até:
-      <input type="date" id="filtroDataFim">
-    </label>
-    <label>Palavra-chave:
-      <input type="text" id="filtroPalavra" placeholder="Buscar item ou observação">
-    </label>
-    <label>Visualizar por:
-      <select id="modoVisualizacao" onchange="filtrar()">
-        <option value="setor">Setor</option>
-        <option value="solicitante">Solicitante</option>
-      </select>
-    </label>
-    <label style="align-self: flex-end;">
-      <button onclick="filtrar()">🔍 Filtrar</button>
-    </label>
+    <div class="linha-filtros">
+      <label>Data de:
+        <input type="date" id="filtroDataInicio">
+      </label>
+      <label>Data até:
+        <input type="date" id="filtroDataFim">
+      </label>
+      <label style="flex: 2;">Palavra-chave:
+        <input type="text" id="filtroPalavra" placeholder="Buscar item ou observação">
+      </label>
+    </div>
+
+    <div class="linha-filtros">
+      <label>Visualizar por:
+        <select id="modoVisualizacao" onchange="filtrar()">
+          <option value="setor">Setor</option>
+          <option value="solicitante">Solicitante</option>
+        </select>
+      </label>
+      <label style="align-self: flex-end;">
+        <button onclick="filtrar()">🔍 Filtrar</button>
+      </label>
+    </div>
   </div>
 
   <div id="conteudoRequisicoes"></div>
