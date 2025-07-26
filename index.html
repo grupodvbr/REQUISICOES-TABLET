@@ -40,34 +40,72 @@
     }
 
     .grupo {
-      margin-top: 20px;
+      background: white;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
 
     .grupo h3 {
       background: #007bff;
       color: white;
-      padding: 8px;
-      border-radius: 6px;
-      margin: 0;
+      margin: -15px -15px 10px;
+      padding: 10px;
+      border-radius: 6px 6px 0 0;
     }
 
-    .card {
-      background: white;
-      padding: 12px;
-      border-radius: 6px;
-      margin: 10px 0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    .item {
+      border-bottom: 1px solid #ddd;
+      padding: 10px 0;
     }
 
-    .card strong {
-      display: block;
-      margin-bottom: 6px;
+    .item:last-child {
+      border-bottom: none;
     }
 
-    .card span {
+    .item strong {
+      font-size: 1em;
+    }
+
+    .item span {
       display: block;
       font-size: 0.95em;
-      margin: 2px 0;
+      margin-top: 4px;
+    }
+
+    .status {
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .acoes {
+      margin-top: 8px;
+    }
+
+    .acoes button {
+      padding: 6px 12px;
+      margin-right: 8px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .entregue {
+      background: #4caf50;
+      color: white;
+    }
+
+    .faltou {
+      background: #f44336;
+      color: white;
+    }
+
+    .feito {
+      background: #ccc !important;
+      color: #333 !important;
+      cursor: default;
     }
   </style>
 </head>
@@ -107,7 +145,6 @@
     async function carregarDados() {
       const res = await fetch('https://script.google.com/macros/s/AKfycbzjVWXyGuwLDEfqNwgJppU2Yvo3_r_L7wbD1-AXfd3lztOUlq5zbKTQ0QCP7IknVae4TA/exec');
       const dados = await res.json();
-
       requisicoes = dados.map(l => l.map(c => (c || '').toString().trim()));
       filtrar();
     }
@@ -153,19 +190,54 @@
         divGrupo.className = 'grupo';
         divGrupo.innerHTML = `<h3>${grupo}</h3>`;
         agrupado[grupo].forEach(l => {
-          const card = document.createElement('div');
-          card.className = 'card';
-          card.innerHTML = `
+          const item = document.createElement('div');
+          item.className = 'item';
+          const id = btoa(l[0] + l[1]); // ID único para o botão
+
+          item.innerHTML = `
             <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
             <span>📍 ${l[4]} — 🙋 ${l[5]}</span>
             <span>🕒 ${new Date(l[0]).toLocaleString('pt-BR')}</span>
             <span>✏️ ${l[6]}</span>
-            <span><b>Status:</b> ${(l[7].toLowerCase() === 'processando' ? 'PENDENTE' : l[7])}</span>
+            <span class="status">Status: ${(l[7].toLowerCase() === 'processando' ? 'PENDENTE' : l[7])}</span>
+            <div class="acoes">
+              <button class="entregue" id="ok-${id}" onclick='marcarStatus(${JSON.stringify(l)}, "Entregue", "${id}")'>✅ Entregue</button>
+              <button class="faltou" id="fail-${id}" onclick='marcarStatus(${JSON.stringify(l)}, "Faltou", "${id}")'>❌ Faltou</button>
+            </div>
           `;
-          divGrupo.appendChild(card);
+          divGrupo.appendChild(item);
         });
         container.appendChild(divGrupo);
       }
+    }
+
+    function marcarStatus(dados, novoStatus, id) {
+      const payload = {
+        dataHoraOriginal: dados[0],
+        item: dados[1],
+        unidade: dados[2],
+        quantidade: dados[3],
+        setor: dados[4],
+        solicitante: dados[5],
+        observacoes: dados[6],
+        statusOriginal: dados[7],
+        novoStatus: novoStatus
+      };
+
+      fetch("https://script.google.com/macros/s/AKfycbxnuFAAJLiThcP99gpgk-EhHIJ2N2YOXjpi7jVROHq6ZqniAkcXlI2h8uj16oTQHsVWnQ/exec", {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(() => {
+        document.getElementById("ok-" + id).classList.add("feito");
+        document.getElementById("fail-" + id).classList.add("feito");
+        document.getElementById("ok-" + id).disabled = true;
+        document.getElementById("fail-" + id).disabled = true;
+        document.getElementById("ok-" + id).innerText = "✔️ Enviado";
+        document.getElementById("fail-" + id).innerText = "✔️ Enviado";
+      })
+      .catch(() => alert("Erro ao marcar status."));
     }
 
     carregarDados();
