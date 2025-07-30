@@ -213,6 +213,19 @@
   <script>
     let requisicoes = [];
 
+    // Define filtros de data para os últimos 2 dias
+    (function definirFiltroPadrao() {
+      const hoje = new Date();
+      const ontem = new Date();
+      ontem.setDate(hoje.getDate() - 1);
+
+      const inicio = ontem.toISOString().split('T')[0];
+      const fim = hoje.toISOString().split('T')[0];
+
+      document.getElementById('filtroDataInicio').value = inicio;
+      document.getElementById('filtroDataFim').value = fim;
+    })();
+
     async function carregarDados() {
       const res = await fetch('https://script.google.com/macros/s/AKfycbzjVWXyGuwLDEfqNwgJppU2Yvo3_r_L7wbD1-AXfd3lztOUlq5zbKTQ0QCP7IknVae4TA/exec');
       const dados = await res.json();
