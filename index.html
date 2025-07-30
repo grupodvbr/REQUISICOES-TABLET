@@ -196,6 +196,13 @@
     </div>
 
     <div class="linha-filtros">
+      <label>Status:
+        <select id="filtroStatus" onchange="filtrar()">
+          <option value="sem">Sem status</option>
+          <option value="com">Com status</option>
+          <option value="todos">Todos</option>
+        </select>
+      </label>
       <label>Visualizar por:
         <select id="modoVisualizacao" onchange="filtrar()">
           <option value="setor">Setor</option>
@@ -238,9 +245,16 @@
       const fimData = document.getElementById('filtroDataFim').value;
       const palavra = document.getElementById('filtroPalavra').value.toLowerCase();
       const modo = document.getElementById('modoVisualizacao').value;
+      const filtroStatus = document.getElementById('filtroStatus').value;
 
       let lista = requisicoes.filter(l => {
         const dataHora = new Date(l[0]);
+        const id = btoa(l[0] + l[1]);
+        const status = localStorage.getItem("flag-" + id);
+
+        if (filtroStatus === "sem" && status) return false;
+        if (filtroStatus === "com" && !status) return false;
+
         if (inicioData) {
           const d = new Date(`${inicioData}T00:00`);
           if (dataHora < d) return false;
