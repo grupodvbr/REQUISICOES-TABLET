@@ -198,9 +198,9 @@
     <div class="linha-filtros">
       <label>Status:
         <select id="filtroStatus" onchange="filtrar()">
+          <option value="todos" selected>Todos</option>
           <option value="sem">Sem status</option>
           <option value="com">Com status</option>
-          <option value="todos">Todos</option>
         </select>
       </label>
       <label>Visualizar por:
@@ -220,13 +220,12 @@
   <script>
     let requisicoes = [];
 
-    // Define filtros de data para os últimos 2 dias
     (function definirFiltroPadrao() {
       const hoje = new Date();
-      const ontem = new Date();
-      ontem.setDate(hoje.getDate() - 2);
+      const doisDiasAtras = new Date();
+      doisDiasAtras.setDate(hoje.getDate() - 1);
 
-      const inicio = ontem.toISOString().split('T')[0];
+      const inicio = doisDiasAtras.toISOString().split('T')[0];
       const fim = hoje.toISOString().split('T')[0];
 
       document.getElementById('filtroDataInicio').value = inicio;
@@ -249,11 +248,12 @@
 
       let lista = requisicoes.filter(l => {
         const dataHora = new Date(l[0]);
-        const id = btoa(l[0] + l[1]);
+        const id = btoa((l[0] || '') + (l[1] || ''));
         const status = localStorage.getItem("flag-" + id);
+        const temStatus = status && status !== 'null' && status !== '';
 
-        if (filtroStatus === "sem" && status) return false;
-        if (filtroStatus === "com" && !status) return false;
+        if (filtroStatus === "sem" && temStatus) return false;
+        if (filtroStatus === "com" && !temStatus) return false;
 
         if (inicioData) {
           const d = new Date(`${inicioData}T00:00`);
@@ -263,11 +263,13 @@
           const d = new Date(`${fimData}T23:59`);
           if (dataHora > d) return false;
         }
+
         if (palavra) {
-          const item = l[1].toLowerCase();
+          const item = (l[1] || '').toLowerCase();
           const obs = (l[6] || '').toLowerCase();
           if (!item.includes(palavra) && !obs.includes(palavra)) return false;
         }
+
         return true;
       });
 
@@ -290,7 +292,7 @@
         ul.className = 'itens';
 
         agrupado[grupo].forEach((l) => {
-          const id = btoa(l[0] + l[1]);
+          const id = btoa((l[0] || '') + (l[1] || ''));
           const statusSalvo = localStorage.getItem("flag-" + id);
           const linhaClasse = statusSalvo ? 'linha concluida' : 'linha';
 
@@ -331,7 +333,8 @@
       linha.classList.add('concluida');
 
       const spanLapis = linha.querySelector('span:nth-child(4)');
-      spanLapis.innerHTML = `✏️ ${spanLapis.textContent.split('✏️')[1].split('—')[0].trim()} — <span class="marcacao">${status}</span>`;
+      const textoObs = spanLapis.textContent.split('✏️')[1].split('—')[0].trim();
+      spanLapis.innerHTML = `✏️ ${textoObs} — <span class="marcacao">${status}</span>`;
     }
 
     function limparBusca() {
