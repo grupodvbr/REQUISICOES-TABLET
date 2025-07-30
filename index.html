@@ -11,7 +11,6 @@
       margin: 0;
       padding: 20px;
     }
-
     .topo {
       display: flex;
       align-items: center;
@@ -19,18 +18,15 @@
       gap: 16px;
       margin-bottom: 20px;
     }
-
     .topo img {
       height: 50px;
       width: auto;
     }
-
     .topo h1 {
       margin: 0;
       font-size: 1.8em;
       text-align: center;
     }
-
     .filtros {
       display: flex;
       flex-direction: column;
@@ -38,7 +34,6 @@
       margin-bottom: 20px;
       align-items: center;
     }
-
     .linha-filtros {
       display: flex;
       flex-wrap: wrap;
@@ -46,7 +41,6 @@
       width: 100%;
       justify-content: center;
     }
-
     .filtros label {
       display: flex;
       flex-direction: column;
@@ -54,7 +48,6 @@
       min-width: 160px;
       position: relative;
     }
-
     .filtros input,
     .filtros select,
     .filtros button {
@@ -63,30 +56,24 @@
       border-radius: 6px;
       border: 1px solid #ccc;
     }
-
     .filtros button {
       background: #f0f0f0;
       cursor: pointer;
       font-weight: bold;
     }
-
     .clear-btn {
       position: absolute;
       right: 8px;
       top: 50%;
       transform: translateY(-50%);
-      color: #888;
+      color: #e91e63;
       cursor: pointer;
       font-size: 1.1em;
       user-select: none;
-      transition: transform 0.2s ease, color 0.2s ease;
     }
-
     .clear-btn:hover {
       transform: translateY(-50%) scale(1.2);
-      color: #555;
     }
-
     .grupo {
       background: white;
       border-radius: 6px;
@@ -94,7 +81,6 @@
       margin-bottom: 20px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
-
     .grupo h3 {
       background: #007bff;
       color: white;
@@ -102,39 +88,32 @@
       padding: 10px;
       border-radius: 6px 6px 0 0;
     }
-
     ul.itens {
       list-style: none;
       padding: 0;
       margin: 0;
     }
-
     ul.itens li {
       border-bottom: 1px solid #eee;
       padding: 10px;
       position: relative;
     }
-
     .linha {
       color: #333;
       transition: opacity 0.3s;
     }
-
     .linha strong {
       display: block;
     }
-
     .linha span {
       display: block;
       font-size: 0.95em;
       margin-top: 3px;
     }
-
     .linha.concluida {
       color: #888;
       opacity: 0.5;
     }
-
     .flags {
       position: absolute;
       top: 10px;
@@ -142,30 +121,24 @@
       display: flex;
       gap: 8px;
     }
-
     .flag {
       font-size: 1.3em;
       cursor: pointer;
       transition: transform 0.2s;
     }
-
     .flag:hover {
       transform: scale(1.2);
     }
-
     .entregue {
       color: green;
     }
-
     .faltou {
       color: red;
     }
-
     .desativado {
       opacity: 0.5;
       cursor: default;
     }
-
     .marcacao {
       font-size: 0.9em;
       margin-left: 6px;
@@ -194,7 +167,6 @@
         <span class="clear-btn" onclick="limparBusca()">❌</span>
       </label>
     </div>
-
     <div class="linha-filtros">
       <label>Status:
         <select id="filtroStatus" onchange="filtrar()">
@@ -220,17 +192,13 @@
   <script>
     let requisicoes = [];
 
-    (function definirFiltroPadrao() {
+    function formatarDataPadrao() {
       const hoje = new Date();
-      const doisDiasAtras = new Date();
-      doisDiasAtras.setDate(hoje.getDate() - 1);
-
-      const inicio = doisDiasAtras.toISOString().split('T')[0];
-      const fim = hoje.toISOString().split('T')[0];
-
-      document.getElementById('filtroDataInicio').value = inicio;
-      document.getElementById('filtroDataFim').value = fim;
-    })();
+      const ontem = new Date();
+      ontem.setDate(hoje.getDate() - 1);
+      document.getElementById('filtroDataInicio').value = ontem.toISOString().split('T')[0];
+      document.getElementById('filtroDataFim').value = hoje.toISOString().split('T')[0];
+    }
 
     async function carregarDados() {
       const res = await fetch('https://script.google.com/macros/s/AKfycbzjVWXyGuwLDEfqNwgJppU2Yvo3_r_L7wbD1-AXfd3lztOUlq5zbKTQ0QCP7IknVae4TA/exec');
@@ -246,30 +214,24 @@
       const modo = document.getElementById('modoVisualizacao').value;
       const filtroStatus = document.getElementById('filtroStatus').value;
 
-      let lista = requisicoes.filter(l => {
+      const lista = requisicoes.filter(l => {
         const dataHora = new Date(l[0]);
         const id = btoa((l[0] || '') + (l[1] || ''));
         const status = localStorage.getItem("flag-" + id);
+
         const temStatus = status && status !== 'null' && status !== '';
 
         if (filtroStatus === "sem" && temStatus) return false;
         if (filtroStatus === "com" && !temStatus) return false;
 
-        if (inicioData) {
-          const d = new Date(`${inicioData}T00:00`);
-          if (dataHora < d) return false;
-        }
-        if (fimData) {
-          const d = new Date(`${fimData}T23:59`);
-          if (dataHora > d) return false;
-        }
+        if (inicioData && dataHora < new Date(`${inicioData}T00:00`)) return false;
+        if (fimData && dataHora > new Date(`${fimData}T23:59`)) return false;
 
         if (palavra) {
           const item = (l[1] || '').toLowerCase();
           const obs = (l[6] || '').toLowerCase();
           if (!item.includes(palavra) && !obs.includes(palavra)) return false;
         }
-
         return true;
       });
 
@@ -322,16 +284,13 @@
       if (!confirm(`Deseja marcar como "${status}"?`)) return;
 
       localStorage.setItem("flag-" + id, status);
-
       const li = el.closest('li');
       li.querySelectorAll('.flag').forEach(f => {
         f.classList.add('desativado');
         f.onclick = null;
       });
-
       const linha = li.querySelector('.linha');
       linha.classList.add('concluida');
-
       const spanLapis = linha.querySelector('span:nth-child(4)');
       const textoObs = spanLapis.textContent.split('✏️')[1].split('—')[0].trim();
       spanLapis.innerHTML = `✏️ ${textoObs} — <span class="marcacao">${status}</span>`;
@@ -342,6 +301,7 @@
       filtrar();
     }
 
+    formatarDataPadrao();
     carregarDados();
   </script>
 </body>
