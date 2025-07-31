@@ -91,7 +91,7 @@
     let requisicoes = [];
 
     async function carregar() {
-      const res = await fetch("https://script.google.com/macros/s/AKfycbyR_v0ttNtHx2spJRs__tbdcsJ1PdXPOzKIcM9H7LINbtTvVc9K2DPIR3ngYAXcDNs-Vg/exec");
+      const res = await fetch("https://script.google.com/macros/s/AKfycbxw1XO5_8_inzujBxlfbLeJkRUj_RpXBb8BeVAhP2J3XHMaQoynPDRm-P7Erpu3BpSa_g/exec");
       const dados = await res.json();
       requisicoes = dados.map(l => l.map(c => (c || '').toString().trim()));
       filtrar();
@@ -147,13 +147,21 @@
     }
 
     async function atualizarStatus(dataHora, item, novoStatus) {
+      let quantidadeEntregue = "";
+
+      if (novoStatus === "Entregue") {
+        quantidadeEntregue = prompt("Informe a quantidade entregue:");
+        if (!quantidadeEntregue) return alert("Operação cancelada.");
+      }
+
       const payload = {
         dataHora,
         item,
-        novoStatus
+        novoStatus,
+        quantidadeEntregue
       };
 
-      await fetch("https://script.google.com/macros/s/AKfycbyR_v0ttNtHx2spJRs__tbdcsJ1PdXPOzKIcM9H7LINbtTvVc9K2DPIR3ngYAXcDNs-Vg/exec", {
+      await fetch("https://script.google.com/macros/s/AKfycbxw1XO5_8_inzujBxlfbLeJkRUj_RpXBb8BeVAhP2J3XHMaQoynPDRm-P7Erpu3BpSa_g/exec", {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: { "Content-Type": "application/json" }
