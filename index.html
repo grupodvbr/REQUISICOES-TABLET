@@ -23,6 +23,7 @@
     .btn-nok { background: #dc3545; color: white; }
     #btnRelatorio { position: fixed; bottom: 15px; right: 15px; background: #007bff; color: white; border: none; padding: 12px 20px; font-size: 1em; border-radius: 6px; cursor: pointer; }
     #relatorioPDF { display: none; }
+    .titulo-relatorio { text-align: center; font-size: 1.5em; margin-bottom: 20px; }
     .secao-relatorio { margin-bottom: 20px; }
     .secao-relatorio h2 { background: #007bff; color: white; padding: 8px; border-radius: 6px; margin-bottom: 10px; }
     .secao-relatorio ul { list-style: none; padding-left: 0; }
@@ -56,15 +57,14 @@
   <button id="btnRelatorio" onclick="gerarRelatorioPDF()">📄 Gerar Relatório</button>
 
   <div id="relatorioPDF">
-    <header style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
-      <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" style="height:40px" />
-      <h1 style="font-size:1.4em;">📄 Relatório de Requisições</h1>
-    </header>
-    <div class="secao-relatorio" id="relatorioEntregues">
+    <div class="titulo-relatorio">📄 Relatório de Requisições</div>
+    <div class="secao-relatorio">
       <h2>✅ ENTREGUES</h2>
+      <ul id="listaEntregues"></ul>
     </div>
-    <div class="secao-relatorio" id="relatorioFaltou">
+    <div class="secao-relatorio">
       <h2>❌ FALTOU</h2>
+      <ul id="listaFaltou"></ul>
     </div>
   </div>
 
@@ -79,71 +79,138 @@
       filtrar();
     }
 
+    function filtrar() {
+      const inicio = document.getElementById("dataInicio").value;
+      const fim = document.getElementById("dataFim").value;
+      const busca = document.getElementById("busca").value.toLowerCase();
+      const status = document.getElementById("statusFiltro").value;
+      const campoAgrupar = document.getElementById("agruparPor").value;
+
+      const filtradas = requisicoes.filter(l => {
+        const dataHora = new Date(l[0]);
+        const statusAtual = l[7] || "";
+
+        if (inicio && dataHora < new Date(inicio + "T00:00")) return false;
+        if (fim && dataHora > new Date(fim + "T23:59")) return false;
+        if (busca && !l[1].toLowerCase().includes(busca) && !l[6].toLowerCase().includes(busca)) return false;
+        if (status === "Processando" && statusAtual !== "" && statusAtual !== "Processando") return false;
+        if (status && status !== "Processando" && statusAtual !== status) return false;
+
+        return true;
+      });
+
+      const agrupado = {};
+      filtradas.forEach(l => {
+        const chave = l[campoAgrupar];
+        if (!agrupado[chave]) agrupado[chave] = [];
+        agrupado[chave].push(l);
+      });
+
+      const container = document.getElementById("listaRequisicoes");
+      container.innerHTML = '';
+
+      for (const grupo in agrupado) {
+        const divGrupo = document.createElement("div");
+        divGrupo.className = "grupo";
+        divGrupo.innerHTML = `<h3>${grupo}</h3>`;
+
+        agrupado[grupo].forEach(l => {
+          const div = document.createElement("div");
+          div.className = "item";
+          const entregue = entregues.find(e => e.item === l[1] && e.dataHora === l[0]);
+          const faltou = faltaram.find(f => f.item === l[1] && f.dataHora === l[0]);
+          const statusTexto = entregue
+            ? `Entregue - Quantidade: ${entregue.qtd}`
+            : (faltou ? "Faltou" : (l[7] || "Processando"));
+
+          div.innerHTML = `
+            <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
+            <div class="info">📅 ${new Date(l[0]).toLocaleString('pt-BR')}</div>
+            <div class="info">🙋 ${l[5]}</div>
+            <div class="info">📝 ${l[6]}</div>
+            <div class="info">📌 Status: ${statusTexto}</div>
+            <div class="botoes">
+              <button class="btn-ok" onclick="atualizarStatus('${l[0]}','${l[1]}','Entregue')" ${entregue ? 'disabled' : ''}>✅ Entregue</button>
+              <button class="btn-nok" onclick="atualizarStatus('${l[0]}','${l[1]}','Faltou')" ${faltou ? 'disabled' : ''}>❌ Faltou</button>
+            </div>
+          `;
+          divGrupo.appendChild(div);
+        });
+
+        container.appendChild(divGrupo);
+      }
+    }
+
+    function atualizarStatus(dataHora, item, novoStatus) {
+      const botoes = document.querySelectorAll(`button[onclick*="${dataHora}"][onclick*="${item}"]`);
+      botoes.forEach(btn => btn.disabled = true);
+
+      if (novoStatus === "Entregue") {
+        const qtd = prompt("Informe a quantidade entregue:");
+        if (!qtd) return alert("Cancelado.");
+        entregues.push({ item, qtd, dataHora });
+        localStorage.setItem("entregues", JSON.stringify(entregues));
+      } else if (novoStatus === "Faltou") {
+        const confirmar = confirm(`Deseja marcar "${item}" como FALTOU?`);
+        if (!confirmar) return;
+        faltaram.push({ item, dataHora });
+        localStorage.setItem("faltaram", JSON.stringify(faltaram));
+      }
+
+      alert(`Status "${novoStatus}" salvo no dispositivo.`);
+      filtrar();
+    }
+
     function gerarRelatorioPDF() {
+      const listaEntregues = document.getElementById("listaEntregues");
+      const listaFaltou = document.getElementById("listaFaltou");
+      listaEntregues.innerHTML = '';
+      listaFaltou.innerHTML = '';
+
       const inicio = document.getElementById("dataInicio").value;
       const fim = document.getElementById("dataFim").value;
       const busca = document.getElementById("busca").value.toLowerCase();
       const statusFiltro = document.getElementById("statusFiltro").value;
 
-      const entreguesDiv = document.getElementById("relatorioEntregues");
-      const faltouDiv = document.getElementById("relatorioFaltou");
-      entreguesDiv.innerHTML = "<h2>✅ ENTREGUES</h2>";
-      faltouDiv.innerHTML = "<h2>❌ FALTOU</h2>";
-
       const filtradas = requisicoes.filter(l => {
         const dataHora = new Date(l[0]);
         const statusAtual = l[7] || "";
+
         if (inicio && dataHora < new Date(inicio + "T00:00")) return false;
         if (fim && dataHora > new Date(fim + "T23:59")) return false;
         if (busca && !l[1].toLowerCase().includes(busca) && !l[6].toLowerCase().includes(busca)) return false;
-        if (statusFiltro === "Processando" && statusAtual !== "") return false;
+        if (statusFiltro === "Processando" && statusAtual !== "" && statusAtual !== "Processando") return false;
         if (statusFiltro && statusFiltro !== "Processando" && statusAtual !== statusFiltro) return false;
+
         return true;
       });
 
-      const grupoEntregues = {};
-      const grupoFaltou = {};
-
-      entregues.forEach(e => {
-        const item = filtradas.find(f => f[0] === e.dataHora && f[1] === e.item);
-        if (!item) return;
-        const setor = item[4] || "Sem Setor";
-        if (!grupoEntregues[setor]) grupoEntregues[setor] = [];
-        grupoEntregues[setor].push({ ...e, data: item[0], solicitante: item[5], obs: item[6] });
+      const entreguesFiltrados = entregues.filter(e => {
+        return filtradas.some(f => f[0] === e.dataHora && f[1] === e.item);
       });
 
-      faltaram.forEach(f => {
-        const item = filtradas.find(d => d[0] === f.dataHora && d[1] === f.item);
-        if (!item) return;
-        const setor = item[4] || "Sem Setor";
-        if (!grupoFaltou[setor]) grupoFaltou[setor] = [];
-        grupoFaltou[setor].push({ ...f, data: item[0], solicitante: item[5], obs: item[6] });
+      const faltaramFiltrados = faltaram.filter(f => {
+        return filtradas.some(d => d[0] === f.dataHora && d[1] === f.item);
       });
 
-      for (const setor in grupoEntregues) {
-        const bloco = document.createElement("div");
-        bloco.innerHTML = `<h3 style="margin:10px 0;">🔹 ${setor}</h3>`;
-        const lista = document.createElement("ul");
-        grupoEntregues[setor].forEach(e => {
+      if (entreguesFiltrados.length === 0) {
+        listaEntregues.innerHTML = '<li>Nenhum item entregue</li>';
+      } else {
+        entreguesFiltrados.forEach(e => {
           const li = document.createElement("li");
-          li.textContent = `• ${e.item} — ${e.qtd} unidades — ${new Date(e.data).toLocaleString('pt-BR')} — ${e.solicitante} — ${e.obs}`;
-          lista.appendChild(li);
+          li.textContent = `• ${e.item} — ${e.qtd} unidades — ${new Date(e.dataHora).toLocaleString('pt-BR')}`;
+          listaEntregues.appendChild(li);
         });
-        bloco.appendChild(lista);
-        entreguesDiv.appendChild(bloco);
       }
 
-      for (const setor in grupoFaltou) {
-        const bloco = document.createElement("div");
-        bloco.innerHTML = `<h3 style="margin:10px 0;">🔸 ${setor}</h3>`;
-        const lista = document.createElement("ul");
-        grupoFaltou[setor].forEach(f => {
+      if (faltaramFiltrados.length === 0) {
+        listaFaltou.innerHTML = '<li>Nenhum item marcado como faltou</li>';
+      } else {
+        faltaramFiltrados.forEach(f => {
           const li = document.createElement("li");
-          li.textContent = `• ${f.item} — ${new Date(f.data).toLocaleString('pt-BR')} — ${f.solicitante} — ${f.obs}`;
-          lista.appendChild(li);
+          li.textContent = `• ${f.item} — ${new Date(f.dataHora).toLocaleString('pt-BR')}`;
+          listaFaltou.appendChild(li);
         });
-        bloco.appendChild(lista);
-        faltouDiv.appendChild(bloco);
       }
 
       const opt = {
