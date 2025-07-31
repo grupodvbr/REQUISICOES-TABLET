@@ -7,46 +7,34 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f9f9f9;
+      background: #f4f4f4;
       margin: 0;
       padding: 10px;
     }
-
-    .cabecalho {
+    header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 12px;
-      background: #f1f1f1;
-      padding: 12px;
-      margin-bottom: 15px;
+      gap: 10px;
+      margin-bottom: 10px;
     }
-
-    .cabecalho img {
+    header img {
       height: 40px;
     }
-
-    .cabecalho h1 {
+    header h1 {
       font-size: 1.4em;
-      margin: 0;
-      color: #000;
     }
-
     .filtros {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 15px;
     }
-
-    .filtros select,
-    .filtros input {
+    .filtros select, .filtros input {
       padding: 10px;
       font-size: 1em;
       border-radius: 6px;
       border: 1px solid #ccc;
     }
-
     .grupo {
       background: white;
       border-radius: 6px;
@@ -54,7 +42,6 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
       padding: 10px;
     }
-
     .grupo h3 {
       background: #007bff;
       color: white;
@@ -62,27 +49,22 @@
       padding: 10px;
       border-radius: 6px 6px 0 0;
     }
-
     .item {
       border-bottom: 1px solid #eee;
       padding: 10px 0;
       display: flex;
       flex-direction: column;
     }
-
     .item strong {
       font-size: 1.1em;
     }
-
     .info {
       font-size: 0.9em;
       color: #555;
     }
-
     .botoes {
       margin-top: 5px;
     }
-
     .botoes button {
       padding: 8px 12px;
       margin-right: 10px;
@@ -91,12 +73,10 @@
       border-radius: 6px;
       cursor: pointer;
     }
-
     .btn-ok {
       background: #28a745;
       color: white;
     }
-
     .btn-nok {
       background: #dc3545;
       color: white;
@@ -104,25 +84,24 @@
   </style>
 </head>
 <body>
-
-  <div class="cabecalho">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/9/95/Graph_icon.svg" alt="Logo CB Systems">
+  <header>
+    <img src="https://raw.githubusercontent.com/grupodvbr/REQUISICOES-TABLET/main/logo-cb.png" alt="Logo CB" />
     <h1>REQUISIÇÕES RECEBIDAS</h1>
-  </div>
+  </header>
 
   <div class="filtros">
     <input type="date" id="dataInicio" />
     <input type="date" id="dataFim" />
     <input type="text" id="busca" placeholder="🔍 Buscar item ou observação" />
-    <select id="filtroStatus" onchange="filtrar()">
-      <option value="PROCESSANDO" selected>PROCESSANDO</option>
-      <option value="Entregue">ENTREGUE</option>
-      <option value="Faltou">FALTOU</option>
-      <option value="todos">TODOS</option>
+    <select id="statusFiltro">
+      <option value="Processando">📌 Apenas Processando</option>
+      <option value="">📋 Todos os Status</option>
+      <option value="Entregue">✅ Entregue</option>
+      <option value="Faltou">❌ Faltou</option>
     </select>
-    <select id="filtroAgrupamento" onchange="filtrar()">
-      <option value="setor" selected>Agrupar por Setor</option>
-      <option value="solicitante">Agrupar por Solicitante</option>
+    <select id="agruparPor">
+      <option value="4">👷 Agrupar por Setor</option>
+      <option value="5">🙋 Agrupar por Solicitante</option>
     </select>
   </div>
 
@@ -132,9 +111,9 @@
     let requisicoes = [];
 
     async function carregar() {
-      const res = await fetch("https://script.google.com/macros/s/AKfycbz-xym81md3q3X_7MsXEusHlCLDKBPF8UmVQRpz6GNYMks0rZBY-Rik4tHnLHVtTR18RA/exec");
+      const res = await fetch("https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec");
       const dados = await res.json();
-      requisicoes = dados.map(l => l.map(c => (c || '').toString().trim()));
+      requisicoes = dados;
       filtrar();
     }
 
@@ -142,23 +121,21 @@
       const inicio = document.getElementById("dataInicio").value;
       const fim = document.getElementById("dataFim").value;
       const busca = document.getElementById("busca").value.toLowerCase();
-      const filtroStatus = document.getElementById("filtroStatus").value;
-      const agruparPor = document.getElementById("filtroAgrupamento").value;
+      const status = document.getElementById("statusFiltro").value;
+      const campoAgrupar = document.getElementById("agruparPor").value;
 
       const filtradas = requisicoes.filter(l => {
         const dataHora = new Date(l[0]);
-        const statusAtual = (l[7] || "PROCESSANDO").toUpperCase();
-
-        if (filtroStatus !== "todos" && statusAtual !== filtroStatus.toUpperCase()) return false;
         if (inicio && dataHora < new Date(inicio + "T00:00")) return false;
         if (fim && dataHora > new Date(fim + "T23:59")) return false;
         if (busca && !l[1].toLowerCase().includes(busca) && !l[6].toLowerCase().includes(busca)) return false;
+        if (status && l[7] !== status) return false;
         return true;
       });
 
       const agrupado = {};
       filtradas.forEach(l => {
-        const chave = agruparPor === 'solicitante' ? l[5] : l[4];
+        const chave = l[campoAgrupar];
         if (!agrupado[chave]) agrupado[chave] = [];
         agrupado[chave].push(l);
       });
@@ -167,9 +144,9 @@
       container.innerHTML = '';
 
       for (const grupo in agrupado) {
-        const grupoDiv = document.createElement("div");
-        grupoDiv.className = "grupo";
-        grupoDiv.innerHTML = `<h3>${grupo}</h3>`;
+        const divGrupo = document.createElement("div");
+        divGrupo.className = "grupo";
+        divGrupo.innerHTML = `<h3>${grupo}</h3>`;
 
         agrupado[grupo].forEach(l => {
           const div = document.createElement("div");
@@ -185,10 +162,10 @@
               <button class="btn-nok" onclick="atualizarStatus('${l[0]}', '${l[1]}', 'Faltou')">❌ Faltou</button>
             </div>
           `;
-          grupoDiv.appendChild(div);
+          divGrupo.appendChild(div);
         });
 
-        container.appendChild(grupoDiv);
+        container.appendChild(divGrupo);
       }
     }
 
@@ -200,6 +177,11 @@
         if (!quantidadeEntregue) return alert("Operação cancelada.");
       }
 
+      if (novoStatus === "Faltou") {
+        const confirmar = confirm(`Tem certeza que deseja marcar o item "${item}" como FALTOU?`);
+        if (!confirmar) return;
+      }
+
       const payload = {
         dataHora,
         item,
@@ -207,7 +189,7 @@
         quantidadeEntregue
       };
 
-      await fetch("https://script.google.com/macros/s/AKfycbz-xym81md3q3X_7MsXEusHlCLDKBPF8UmVQRpz6GNYMks0rZBY-Rik4tHnLHVtTR18RA/exec", {
+      await fetch("https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec", {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: { "Content-Type": "application/json" }
@@ -217,7 +199,10 @@
       carregar();
     }
 
-    carregar();
+    window.onload = () => {
+      document.getElementById("statusFiltro").value = "Processando";
+      carregar();
+    }
   </script>
 </body>
 </html>
