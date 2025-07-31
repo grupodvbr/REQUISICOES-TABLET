@@ -70,153 +70,164 @@
 
   <script>
     let requisicoes = [];
-let entregues = JSON.parse(localStorage.getItem("entregues")) || [];
-let faltaram = JSON.parse(localStorage.getItem("faltaram")) || [];
+    let entregues = JSON.parse(localStorage.getItem("entregues")) || [];
+    let faltaram = JSON.parse(localStorage.getItem("faltaram")) || [];
 
-async function carregar() {
-  const res = await fetch("https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec");
-  requisicoes = await res.json();
-  filtrar();
-}
+    async function carregar() {
+      const res = await fetch("https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec");
+      requisicoes = await res.json();
+      filtrar();
+    }
 
-function filtrar() {
-  const inicio = document.getElementById("dataInicio").value;
-  const fim = document.getElementById("dataFim").value;
-  const busca = document.getElementById("busca").value.toLowerCase();
-  const status = document.getElementById("statusFiltro").value;
-  const campoAgrupar = document.getElementById("agruparPor").value;
+    function filtrar() {
+      const inicio = document.getElementById("dataInicio").value;
+      const fim = document.getElementById("dataFim").value;
+      const busca = document.getElementById("busca").value.toLowerCase();
+      const status = document.getElementById("statusFiltro").value;
+      const campoAgrupar = document.getElementById("agruparPor").value;
 
-  const filtradas = requisicoes.filter(l => {
-    const dataHora = new Date(l[0]);
-    if (inicio && dataHora < new Date(inicio + "T00:00")) return false;
-    if (fim && dataHora > new Date(fim + "T23:59")) return false;
-    if (busca && !l[1].toLowerCase().includes(busca) && !l[6].toLowerCase().includes(busca)) return false;
-    if (status && l[7] !== status) return false;
-    return true;
-  });
+      const filtradas = requisicoes.filter(l => {
+        const dataHora = new Date(l[0]);
+        const statusAtual = l[7] || "";
 
-  const agrupado = {};
-  filtradas.forEach(l => {
-    const chave = l[campoAgrupar];
-    if (!agrupado[chave]) agrupado[chave] = [];
-    agrupado[chave].push(l);
-  });
+        if (inicio && dataHora < new Date(inicio + "T00:00")) return false;
+        if (fim && dataHora > new Date(fim + "T23:59")) return false;
+        if (busca && !l[1].toLowerCase().includes(busca) && !l[6].toLowerCase().includes(busca)) return false;
+        if (status === "Processando" && statusAtual !== "" && statusAtual !== "Processando") return false;
+        if (status && status !== "Processando" && statusAtual !== status) return false;
 
-  const container = document.getElementById("listaRequisicoes");
-  container.innerHTML = '';
+        return true;
+      });
 
-  for (const grupo in agrupado) {
-    const divGrupo = document.createElement("div");
-    divGrupo.className = "grupo";
-    divGrupo.innerHTML = `<h3>${grupo}</h3>`;
+      const agrupado = {};
+      filtradas.forEach(l => {
+        const chave = l[campoAgrupar];
+        if (!agrupado[chave]) agrupado[chave] = [];
+        agrupado[chave].push(l);
+      });
 
-    agrupado[grupo].forEach(l => {
-      const div = document.createElement("div");
-      div.className = "item";
-      const entregue = entregues.find(e => e.item === l[1] && e.dataHora === l[0]);
-      const faltou = faltaram.find(f => f.item === l[1] && f.dataHora === l[0]);
+      const container = document.getElementById("listaRequisicoes");
+      container.innerHTML = '';
 
-      div.innerHTML = `
-        <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
-        <div class="info">📅 ${new Date(l[0]).toLocaleString('pt-BR')}</div>
-        <div class="info">🙋 ${l[5]}</div>
-        <div class="info">📝 ${l[6]}</div>
-        <div class="info">📌 Status: ${entregue ? "Entregue - Quantidade: " + entregue.qtd : (faltou ? "Faltou" : l[7])}</div>
-        <div class="botoes">
-          <button class="btn-ok" onclick="atualizarStatus('${l[0]}','${l[1]}','Entregue')" ${entregue ? 'disabled' : ''}>✅ Entregue</button>
-          <button class="btn-nok" onclick="atualizarStatus('${l[0]}','${l[1]}','Faltou')" ${faltou ? 'disabled' : ''}>❌ Faltou</button>
-        </div>
-      `;
-      divGrupo.appendChild(div);
-    });
+      for (const grupo in agrupado) {
+        const divGrupo = document.createElement("div");
+        divGrupo.className = "grupo";
+        divGrupo.innerHTML = `<h3>${grupo}</h3>`;
 
-    container.appendChild(divGrupo);
-  }
-}
+        agrupado[grupo].forEach(l => {
+          const div = document.createElement("div");
+          div.className = "item";
+          const entregue = entregues.find(e => e.item === l[1] && e.dataHora === l[0]);
+          const faltou = faltaram.find(f => f.item === l[1] && f.dataHora === l[0]);
+          const statusTexto = entregue
+            ? `Entregue - Quantidade: ${entregue.qtd}`
+            : (faltou ? "Faltou" : (l[7] || "Processando"));
 
-function atualizarStatus(dataHora, item, novoStatus) {
-  const botoes = document.querySelectorAll(`button[onclick*="${dataHora}"][onclick*="${item}"]`);
-  botoes.forEach(btn => btn.disabled = true);
+          div.innerHTML = `
+            <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
+            <div class="info">📅 ${new Date(l[0]).toLocaleString('pt-BR')}</div>
+            <div class="info">🙋 ${l[5]}</div>
+            <div class="info">📝 ${l[6]}</div>
+            <div class="info">📌 Status: ${statusTexto}</div>
+            <div class="botoes">
+              <button class="btn-ok" onclick="atualizarStatus('${l[0]}','${l[1]}','Entregue')" ${entregue ? 'disabled' : ''}>✅ Entregue</button>
+              <button class="btn-nok" onclick="atualizarStatus('${l[0]}','${l[1]}','Faltou')" ${faltou ? 'disabled' : ''}>❌ Faltou</button>
+            </div>
+          `;
+          divGrupo.appendChild(div);
+        });
 
-  if (novoStatus === "Entregue") {
-    const qtd = prompt("Informe a quantidade entregue:");
-    if (!qtd) return alert("Cancelado.");
-    entregues.push({ item, qtd, dataHora });
-    localStorage.setItem("entregues", JSON.stringify(entregues));
-  } else if (novoStatus === "Faltou") {
-    const confirmar = confirm(`Deseja marcar "${item}" como FALTOU?`);
-    if (!confirmar) return;
-    faltaram.push({ item, dataHora });
-    localStorage.setItem("faltaram", JSON.stringify(faltaram));
-  }
+        container.appendChild(divGrupo);
+      }
+    }
 
-  alert(`Status "${novoStatus}" salvo no dispositivo.`);
-  filtrar();
-}
+    function atualizarStatus(dataHora, item, novoStatus) {
+      const botoes = document.querySelectorAll(`button[onclick*="${dataHora}"][onclick*="${item}"]`);
+      botoes.forEach(btn => btn.disabled = true);
 
-function gerarRelatorioPDF() {
-  const listaEntregues = document.getElementById("listaEntregues");
-  const listaFaltou = document.getElementById("listaFaltou");
-  listaEntregues.innerHTML = '';
-  listaFaltou.innerHTML = '';
+      if (novoStatus === "Entregue") {
+        const qtd = prompt("Informe a quantidade entregue:");
+        if (!qtd) return alert("Cancelado.");
+        entregues.push({ item, qtd, dataHora });
+        localStorage.setItem("entregues", JSON.stringify(entregues));
+      } else if (novoStatus === "Faltou") {
+        const confirmar = confirm(`Deseja marcar "${item}" como FALTOU?`);
+        if (!confirmar) return;
+        faltaram.push({ item, dataHora });
+        localStorage.setItem("faltaram", JSON.stringify(faltaram));
+      }
 
-  const inicio = document.getElementById("dataInicio").value;
-  const fim = document.getElementById("dataFim").value;
-  const busca = document.getElementById("busca").value.toLowerCase();
-  const statusFiltro = document.getElementById("statusFiltro").value;
+      alert(`Status "${novoStatus}" salvo no dispositivo.`);
+      filtrar();
+    }
 
-  const filtradas = requisicoes.filter(l => {
-    const dataHora = new Date(l[0]);
-    if (inicio && dataHora < new Date(inicio + "T00:00")) return false;
-    if (fim && dataHora > new Date(fim + "T23:59")) return false;
-    if (busca && !l[1].toLowerCase().includes(busca) && !l[6].toLowerCase().includes(busca)) return false;
-    if (statusFiltro && l[7] !== statusFiltro) return false;
-    return true;
-  });
+    function gerarRelatorioPDF() {
+      const listaEntregues = document.getElementById("listaEntregues");
+      const listaFaltou = document.getElementById("listaFaltou");
+      listaEntregues.innerHTML = '';
+      listaFaltou.innerHTML = '';
 
-  const entreguesFiltrados = entregues.filter(e => {
-    return filtradas.some(f => f[0] === e.dataHora && f[1] === e.item);
-  });
+      const inicio = document.getElementById("dataInicio").value;
+      const fim = document.getElementById("dataFim").value;
+      const busca = document.getElementById("busca").value.toLowerCase();
+      const statusFiltro = document.getElementById("statusFiltro").value;
 
-  const faltaramFiltrados = faltaram.filter(f => {
-    return filtradas.some(d => d[0] === f.dataHora && d[1] === f.item);
-  });
+      const filtradas = requisicoes.filter(l => {
+        const dataHora = new Date(l[0]);
+        const statusAtual = l[7] || "";
 
-  if (entreguesFiltrados.length === 0) {
-    listaEntregues.innerHTML = '<li>Nenhum item entregue</li>';
-  } else {
-    entreguesFiltrados.forEach(e => {
-      const li = document.createElement("li");
-      li.textContent = `• ${e.item} — ${e.qtd} unidades — ${new Date(e.dataHora).toLocaleString('pt-BR')}`;
-      listaEntregues.appendChild(li);
-    });
-  }
+        if (inicio && dataHora < new Date(inicio + "T00:00")) return false;
+        if (fim && dataHora > new Date(fim + "T23:59")) return false;
+        if (busca && !l[1].toLowerCase().includes(busca) && !l[6].toLowerCase().includes(busca)) return false;
+        if (statusFiltro === "Processando" && statusAtual !== "" && statusAtual !== "Processando") return false;
+        if (statusFiltro && statusFiltro !== "Processando" && statusAtual !== statusFiltro) return false;
 
-  if (faltaramFiltrados.length === 0) {
-    listaFaltou.innerHTML = '<li>Nenhum item marcado como faltou</li>';
-  } else {
-    faltaramFiltrados.forEach(f => {
-      const li = document.createElement("li");
-      li.textContent = `• ${f.item} — ${new Date(f.dataHora).toLocaleString('pt-BR')}`;
-      listaFaltou.appendChild(li);
-    });
-  }
+        return true;
+      });
 
-  const opt = {
-    margin: 0.5,
-    filename: 'relatorio_requisicoes.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
-  };
+      const entreguesFiltrados = entregues.filter(e => {
+        return filtradas.some(f => f[0] === e.dataHora && f[1] === e.item);
+      });
 
-  html2pdf().set(opt).from(document.getElementById("relatorioPDF")).save();
-}
+      const faltaramFiltrados = faltaram.filter(f => {
+        return filtradas.some(d => d[0] === f.dataHora && d[1] === f.item);
+      });
 
-window.onload = () => {
-  document.getElementById("statusFiltro").value = "Processando";
-  carregar();
-};
+      if (entreguesFiltrados.length === 0) {
+        listaEntregues.innerHTML = '<li>Nenhum item entregue</li>';
+      } else {
+        entreguesFiltrados.forEach(e => {
+          const li = document.createElement("li");
+          li.textContent = `• ${e.item} — ${e.qtd} unidades — ${new Date(e.dataHora).toLocaleString('pt-BR')}`;
+          listaEntregues.appendChild(li);
+        });
+      }
+
+      if (faltaramFiltrados.length === 0) {
+        listaFaltou.innerHTML = '<li>Nenhum item marcado como faltou</li>';
+      } else {
+        faltaramFiltrados.forEach(f => {
+          const li = document.createElement("li");
+          li.textContent = `• ${f.item} — ${new Date(f.dataHora).toLocaleString('pt-BR')}`;
+          listaFaltou.appendChild(li);
+        });
+      }
+
+      const opt = {
+        margin: 0.5,
+        filename: 'relatorio_requisicoes.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(document.getElementById("relatorioPDF")).save();
+    }
+
+    window.onload = () => {
+      document.getElementById("statusFiltro").value = "Processando";
+      carregar();
+    };
   </script>
 </body>
 </html>
