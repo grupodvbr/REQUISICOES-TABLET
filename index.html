@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Requisições Recebidas</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -81,6 +82,51 @@
       background: #dc3545;
       color: white;
     }
+
+    #btnRelatorio {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 1em;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #relatorioPDF {
+      display: none;
+    }
+
+    .titulo-relatorio {
+      text-align: center;
+      font-size: 1.5em;
+      margin-bottom: 20px;
+    }
+
+    .secao-relatorio {
+      margin-bottom: 20px;
+    }
+
+    .secao-relatorio h2 {
+      background: #007bff;
+      color: white;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .secao-relatorio ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .secao-relatorio li {
+      padding: 5px 0;
+      border-bottom: 1px solid #ccc;
+    }
   </style>
 </head>
 <body>
@@ -107,13 +153,31 @@
 
   <div id="listaRequisicoes"></div>
 
+  <button id="btnRelatorio" onclick="gerarRelatorioPDF()">📄 Gerar Relatório</button>
+
+  <!-- Área oculta para gerar o PDF -->
+  <div id="relatorioPDF">
+    <div class="titulo-relatorio">📄 Relatório de Requisições</div>
+
+    <div class="secao-relatorio">
+      <h2>✅ ENTREGUES</h2>
+      <ul id="listaEntregues"></ul>
+    </div>
+
+    <div class="secao-relatorio">
+      <h2>❌ FALTOU</h2>
+      <ul id="listaFaltou"></ul>
+    </div>
+  </div>
+
   <script>
     let requisicoes = [];
+    let entregues = JSON.parse(localStorage.getItem("entregues")) || [];
+    let faltaram = JSON.parse(localStorage.getItem("faltaram")) || [];
 
     async function carregar() {
       const res = await fetch("https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec");
-      const dados = await res.json();
-      requisicoes = dados;
+      requisicoes = await res.json();
       filtrar();
     }
 
@@ -151,15 +215,19 @@
         agrupado[grupo].forEach(l => {
           const div = document.createElement("div");
           div.className = "item";
+          const key = `${l[0]}-${l[1]}`;
+          const entregue = entregues.find(e => e.item === l[1] && e.dataHora === l[0]);
+          const faltou = faltaram.find(f => f.item === l[1] && f.dataHora === l[0]);
+
           div.innerHTML = `
             <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
             <div class="info">📅 ${new Date(l[0]).toLocaleString('pt-BR')}</div>
             <div class="info">🙋 ${l[5]}</div>
             <div class="info">📝 ${l[6]}</div>
-            <div class="info">📌 Status: ${l[7]}</div>
+            <div class="info">📌 Status: ${entregue ? "Entregue" : (faltou ? "Faltou" : l[7])}</div>
             <div class="botoes">
-              <button class="btn-ok" onclick="atualizarStatus('${l[0]}', '${l[1]}', 'Entregue')">✅ Entregue</button>
-              <button class="btn-nok" onclick="atualizarStatus('${l[0]}', '${l[1]}', 'Faltou')">❌ Faltou</button>
+              <button class="btn-ok" onclick="atualizarStatus('${l[0]}','${l[1]}','Entregue')" ${entregue ? 'disabled' : ''}>✅ Entregue</button>
+              <button class="btn-nok" onclick="atualizarStatus('${l[0]}','${l[1]}','Faltou')" ${faltou ? 'disabled' : ''}>❌ Faltou</button>
             </div>
           `;
           divGrupo.appendChild(div);
@@ -169,40 +237,67 @@
       }
     }
 
-    async function atualizarStatus(dataHora, item, novoStatus) {
-      let quantidadeEntregue = "";
+    function atualizarStatus(dataHora, item, novoStatus) {
+      const botoes = document.querySelectorAll(`button[onclick*="${dataHora}"][onclick*="${item}"]`);
+      botoes.forEach(btn => btn.disabled = true);
 
       if (novoStatus === "Entregue") {
-        quantidadeEntregue = prompt("Informe a quantidade entregue:");
-        if (!quantidadeEntregue) return alert("Operação cancelada.");
-      }
-
-      if (novoStatus === "Faltou") {
-        const confirmar = confirm(`Tem certeza que deseja marcar o item "${item}" como FALTOU?`);
+        const qtd = prompt("Informe a quantidade entregue:");
+        if (!qtd) return alert("Cancelado.");
+        entregues.push({ item, qtd, dataHora });
+        localStorage.setItem("entregues", JSON.stringify(entregues));
+      } else if (novoStatus === "Faltou") {
+        const confirmar = confirm(`Deseja marcar "${item}" como FALTOU?`);
         if (!confirmar) return;
+        faltaram.push({ item, dataHora });
+        localStorage.setItem("faltaram", JSON.stringify(faltaram));
       }
 
-      const payload = {
-        dataHora,
-        item,
-        novoStatus,
-        quantidadeEntregue
+      alert(`Status "${novoStatus}" salvo no dispositivo.`);
+      filtrar();
+    }
+
+    function gerarRelatorioPDF() {
+      const listaEntregues = document.getElementById("listaEntregues");
+      const listaFaltou = document.getElementById("listaFaltou");
+      listaEntregues.innerHTML = '';
+      listaFaltou.innerHTML = '';
+
+      if (entregues.length === 0) {
+        listaEntregues.innerHTML = '<li>Nenhum item entregue</li>';
+      } else {
+        entregues.forEach(e => {
+          const li = document.createElement("li");
+          li.textContent = `• ${e.item} — ${e.qtd} unidades — ${new Date(e.dataHora).toLocaleString('pt-BR')}`;
+          listaEntregues.appendChild(li);
+        });
+      }
+
+      if (faltaram.length === 0) {
+        listaFaltou.innerHTML = '<li>Nenhum item marcado como faltou</li>';
+      } else {
+        faltaram.forEach(f => {
+          const li = document.createElement("li");
+          li.textContent = `• ${f.item} — ${new Date(f.dataHora).toLocaleString('pt-BR')}`;
+          listaFaltou.appendChild(li);
+        });
+      }
+
+      const opt = {
+        margin: 0.5,
+        filename: 'relatorio_requisicoes.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
       };
 
-      await fetch("https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec", {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" }
-      });
-
-      alert(`Status atualizado para "${novoStatus}"`);
-      carregar();
+      html2pdf().set(opt).from(document.getElementById("relatorioPDF")).save();
     }
 
     window.onload = () => {
       document.getElementById("statusFiltro").value = "Processando";
       carregar();
-    }
+    };
   </script>
 </body>
 </html>
