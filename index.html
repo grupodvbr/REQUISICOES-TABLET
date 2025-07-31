@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Requisições Tablet</title>
+  <title>Requisições Recebidas</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,17 +11,34 @@
       margin: 0;
       padding: 10px;
     }
-    h1 {
-      text-align: center;
-      font-size: 1.6em;
-      margin-bottom: 10px;
+
+    .cabecalho {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: #f1f1f1;
+      padding: 12px;
+      margin-bottom: 15px;
     }
+
+    .cabecalho img {
+      height: 40px;
+    }
+
+    .cabecalho h1 {
+      font-size: 1.4em;
+      margin: 0;
+      color: #000;
+    }
+
     .filtros {
       display: flex;
       flex-direction: column;
       gap: 10px;
       margin-bottom: 15px;
     }
+
     .filtros select,
     .filtros input {
       padding: 10px;
@@ -29,6 +46,7 @@
       border-radius: 6px;
       border: 1px solid #ccc;
     }
+
     .grupo {
       background: white;
       border-radius: 6px;
@@ -36,6 +54,7 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
       padding: 10px;
     }
+
     .grupo h3 {
       background: #007bff;
       color: white;
@@ -43,22 +62,27 @@
       padding: 10px;
       border-radius: 6px 6px 0 0;
     }
+
     .item {
       border-bottom: 1px solid #eee;
       padding: 10px 0;
       display: flex;
       flex-direction: column;
     }
+
     .item strong {
       font-size: 1.1em;
     }
+
     .info {
       font-size: 0.9em;
       color: #555;
     }
+
     .botoes {
       margin-top: 5px;
     }
+
     .botoes button {
       padding: 8px 12px;
       margin-right: 10px;
@@ -67,10 +91,12 @@
       border-radius: 6px;
       cursor: pointer;
     }
+
     .btn-ok {
       background: #28a745;
       color: white;
     }
+
     .btn-nok {
       background: #dc3545;
       color: white;
@@ -78,7 +104,11 @@
   </style>
 </head>
 <body>
-  <h1>📋 Requisições</h1>
+
+  <div class="cabecalho">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/9/95/Graph_icon.svg" alt="Logo CB Systems">
+    <h1>REQUISIÇÕES RECEBIDAS</h1>
+  </div>
 
   <div class="filtros">
     <input type="date" id="dataInicio" />
