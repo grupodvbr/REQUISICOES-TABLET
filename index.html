@@ -142,9 +142,6 @@
     }
 
     function atualizarStatus(dataHora, item, novoStatus) {
-      const botoes = document.querySelectorAll(`button[onclick*="${dataHora}"][onclick*="${item}"]`);
-      botoes.forEach(btn => btn.disabled = true);
-
       if (novoStatus === "Entregue") {
         const qtd = prompt("Informe a quantidade entregue:");
         if (!qtd) return alert("Cancelado.");
@@ -152,7 +149,7 @@
         localStorage.setItem("entregues", JSON.stringify(entregues));
       } else if (novoStatus === "Faltou") {
         const confirmar = confirm(`Deseja marcar "${item}" como FALTOU?`);
-        if (!confirmar) return;
+        if (!confirmar) return alert("Cancelado.");
         faltaram.push({ item, dataHora });
         localStorage.setItem("faltaram", JSON.stringify(faltaram));
       }
