@@ -3,306 +3,167 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>REQUISIÇÕES RECEBIDAS</title>
+  <title>Requisições Tablet</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f5f5;
+      background: #f9f9f9;
       margin: 0;
-      padding: 20px;
+      padding: 10px;
     }
-    .topo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-    .topo img {
-      height: 50px;
-      width: auto;
-    }
-    .topo h1 {
-      margin: 0;
-      font-size: 1.8em;
+    h1 {
       text-align: center;
+      font-size: 1.6em;
+      margin-bottom: 10px;
     }
     .filtros {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-bottom: 20px;
-      align-items: center;
-    }
-    .linha-filtros {
-      display: flex;
-      flex-wrap: wrap;
       gap: 10px;
-      width: 100%;
-      justify-content: center;
+      margin-bottom: 15px;
     }
-    .filtros label {
-      display: flex;
-      flex-direction: column;
-      font-weight: bold;
-      min-width: 160px;
-      position: relative;
-    }
-    .filtros input,
-    .filtros select,
-    .filtros button {
+    .filtros input {
       padding: 10px;
       font-size: 1em;
       border-radius: 6px;
       border: 1px solid #ccc;
     }
-    .filtros button {
-      background: #f0f0f0;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .clear-btn {
-      position: absolute;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #e91e63;
-      cursor: pointer;
-      font-size: 1.1em;
-      user-select: none;
-    }
-    .clear-btn:hover {
-      transform: translateY(-50%) scale(1.2);
-    }
     .grupo {
       background: white;
       border-radius: 6px;
-      padding: 15px;
       margin-bottom: 20px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 10px;
     }
     .grupo h3 {
       background: #007bff;
       color: white;
-      margin: -15px -15px 10px;
+      margin: -10px -10px 10px;
       padding: 10px;
       border-radius: 6px 6px 0 0;
     }
-    ul.itens {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    ul.itens li {
+    .item {
       border-bottom: 1px solid #eee;
-      padding: 10px;
-      position: relative;
-    }
-    .linha {
-      color: #333;
-      transition: opacity 0.3s;
-    }
-    .linha strong {
-      display: block;
-    }
-    .linha span {
-      display: block;
-      font-size: 0.95em;
-      margin-top: 3px;
-    }
-    .linha.concluida {
-      color: #888;
-      opacity: 0.5;
-    }
-    .flags {
-      position: absolute;
-      top: 10px;
-      right: 10px;
+      padding: 10px 0;
       display: flex;
-      gap: 8px;
+      flex-direction: column;
     }
-    .flag {
-      font-size: 1.3em;
-      cursor: pointer;
-      transition: transform 0.2s;
+    .item strong {
+      font-size: 1.1em;
     }
-    .flag:hover {
-      transform: scale(1.2);
-    }
-    .entregue {
-      color: green;
-    }
-    .faltou {
-      color: red;
-    }
-    .desativado {
-      opacity: 0.5;
-      cursor: default;
-    }
-    .marcacao {
+    .info {
       font-size: 0.9em;
-      margin-left: 6px;
-      font-style: italic;
       color: #555;
+    }
+    .botoes {
+      margin-top: 5px;
+    }
+    .botoes button {
+      padding: 8px 12px;
+      margin-right: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-ok {
+      background: #28a745;
+      color: white;
+    }
+    .btn-nok {
+      background: #dc3545;
+      color: white;
     }
   </style>
 </head>
 <body>
-
-  <div class="topo">
-    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo" />
-    <h1>REQUISIÇÕES RECEBIDAS</h1>
-  </div>
+  <h1>📋 Requisições por Setor</h1>
 
   <div class="filtros">
-    <div class="linha-filtros">
-      <label>Data de:
-        <input type="date" id="filtroDataInicio">
-      </label>
-      <label>Data até:
-        <input type="date" id="filtroDataFim">
-      </label>
-      <label style="flex: 2; position: relative;">Palavra-chave:
-        <input type="text" id="filtroPalavra" placeholder="Buscar item ou observação" style="padding-right: 30px;">
-        <span class="clear-btn" onclick="limparBusca()">❌</span>
-      </label>
-    </div>
-    <div class="linha-filtros">
-      <label>Status:
-        <select id="filtroStatus" onchange="filtrar()">
-          <option value="todos" selected>Todos</option>
-          <option value="sem">Sem status</option>
-          <option value="com">Com status</option>
-        </select>
-      </label>
-      <label>Visualizar por:
-        <select id="modoVisualizacao" onchange="filtrar()">
-          <option value="setor">Setor</option>
-          <option value="solicitante">Solicitante</option>
-        </select>
-      </label>
-      <label style="align-self: flex-end;">
-        <button onclick="filtrar()">🔍 Filtrar</button>
-      </label>
-    </div>
+    <input type="date" id="dataInicio" />
+    <input type="date" id="dataFim" />
+    <input type="text" id="busca" placeholder="🔍 Buscar item ou observação" />
   </div>
 
-  <div id="conteudoRequisicoes"></div>
+  <div id="listaRequisicoes"></div>
 
   <script>
     let requisicoes = [];
 
-    function formatarDataPadrao() {
-      const hoje = new Date();
-      const ontem = new Date();
-      ontem.setDate(hoje.getDate() - 1);
-      document.getElementById('filtroDataInicio').value = ontem.toISOString().split('T')[0];
-      document.getElementById('filtroDataFim').value = hoje.toISOString().split('T')[0];
-    }
-
-    async function carregarDados() {
-      const res = await fetch('https://script.google.com/macros/s/AKfycbzjVWXyGuwLDEfqNwgJppU2Yvo3_r_L7wbD1-AXfd3lztOUlq5zbKTQ0QCP7IknVae4TA/exec');
+    async function carregar() {
+      const res = await fetch("https://script.google.com/macros/s/AKfycbyR_v0ttNtHx2spJRs__tbdcsJ1PdXPOzKIcM9H7LINbtTvVc9K2DPIR3ngYAXcDNs-Vg/exec");
       const dados = await res.json();
       requisicoes = dados.map(l => l.map(c => (c || '').toString().trim()));
       filtrar();
     }
 
     function filtrar() {
-      const inicioData = document.getElementById('filtroDataInicio').value;
-      const fimData = document.getElementById('filtroDataFim').value;
-      const palavra = document.getElementById('filtroPalavra').value.toLowerCase();
-      const modo = document.getElementById('modoVisualizacao').value;
-      const filtroStatus = document.getElementById('filtroStatus').value;
+      const inicio = document.getElementById("dataInicio").value;
+      const fim = document.getElementById("dataFim").value;
+      const busca = document.getElementById("busca").value.toLowerCase();
 
-      const lista = requisicoes.filter(l => {
+      const filtradas = requisicoes.filter(l => {
         const dataHora = new Date(l[0]);
-        const id = btoa((l[0] || '') + (l[1] || ''));
-        const status = localStorage.getItem("flag-" + id);
-
-        const temStatus = status && status !== 'null' && status !== '';
-
-        if (filtroStatus === "sem" && temStatus) return false;
-        if (filtroStatus === "com" && !temStatus) return false;
-
-        if (inicioData && dataHora < new Date(`${inicioData}T00:00`)) return false;
-        if (fimData && dataHora > new Date(`${fimData}T23:59`)) return false;
-
-        if (palavra) {
-          const item = (l[1] || '').toLowerCase();
-          const obs = (l[6] || '').toLowerCase();
-          if (!item.includes(palavra) && !obs.includes(palavra)) return false;
-        }
+        if (inicio && dataHora < new Date(inicio + "T00:00")) return false;
+        if (fim && dataHora > new Date(fim + "T23:59")) return false;
+        if (busca && !l[1].toLowerCase().includes(busca) && !l[6].toLowerCase().includes(busca)) return false;
         return true;
       });
 
       const agrupado = {};
-      lista.forEach(l => {
-        const chave = modo === 'setor' ? l[4] : l[5];
-        if (!agrupado[chave]) agrupado[chave] = [];
-        agrupado[chave].push(l);
+      filtradas.forEach(l => {
+        const setor = l[4];
+        if (!agrupado[setor]) agrupado[setor] = [];
+        agrupado[setor].push(l);
       });
 
-      const container = document.getElementById('conteudoRequisicoes');
+      const container = document.getElementById("listaRequisicoes");
       container.innerHTML = '';
 
-      for (const grupo in agrupado) {
-        const divGrupo = document.createElement('div');
-        divGrupo.className = 'grupo';
-        divGrupo.innerHTML = `<h3>${grupo}</h3>`;
+      for (const setor in agrupado) {
+        const grupo = document.createElement("div");
+        grupo.className = "grupo";
+        grupo.innerHTML = `<h3>${setor}</h3>`;
 
-        const ul = document.createElement('ul');
-        ul.className = 'itens';
-
-        agrupado[grupo].forEach((l) => {
-          const id = btoa((l[0] || '') + (l[1] || ''));
-          const statusSalvo = localStorage.getItem("flag-" + id);
-          const linhaClasse = statusSalvo ? 'linha concluida' : 'linha';
-
-          const li = document.createElement('li');
-          li.innerHTML = `
-            <div class="${linhaClasse}">
-              <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
-              <span>📍 ${l[4]} — 🙋 ${l[5]}</span>
-              <span>🕒 ${new Date(l[0]).toLocaleString('pt-BR')}</span>
-              <span>✏️ ${l[6]} ${statusSalvo ? `<span class="marcacao">${statusSalvo}</span>` : ''}</span>
-            </div>
-            <div class="flags">
-              <span class="flag entregue ${statusSalvo ? 'desativado' : ''}" onclick="marcar('${id}', 'Entregue', this)">✅</span>
-              <span class="flag faltou ${statusSalvo ? 'desativado' : ''}" onclick="marcar('${id}', 'Faltou', this)">❌</span>
+        agrupado[setor].forEach(l => {
+          const div = document.createElement("div");
+          div.className = "item";
+          div.innerHTML = `
+            <strong>${l[1]} — ${l[3]} ${l[2]}</strong>
+            <div class="info">📅 ${new Date(l[0]).toLocaleString('pt-BR')}</div>
+            <div class="info">🙋 ${l[5]}</div>
+            <div class="info">📝 ${l[6]}</div>
+            <div class="info">📌 Status: ${l[7]}</div>
+            <div class="botoes">
+              <button class="btn-ok" onclick="atualizarStatus('${l[0]}', '${l[1]}', 'Entregue')">✅ Entregue</button>
+              <button class="btn-nok" onclick="atualizarStatus('${l[0]}', '${l[1]}', 'Faltou')">❌ Faltou</button>
             </div>
           `;
-          ul.appendChild(li);
+          grupo.appendChild(div);
         });
 
-        divGrupo.appendChild(ul);
-        container.appendChild(divGrupo);
+        container.appendChild(grupo);
       }
     }
 
-    function marcar(id, status, el) {
-      if (el.classList.contains('desativado')) return;
-      if (!confirm(`Deseja marcar como "${status}"?`)) return;
+    async function atualizarStatus(dataHora, item, novoStatus) {
+      const payload = {
+        dataHora,
+        item,
+        novoStatus
+      };
 
-      localStorage.setItem("flag-" + id, status);
-      const li = el.closest('li');
-      li.querySelectorAll('.flag').forEach(f => {
-        f.classList.add('desativado');
-        f.onclick = null;
+      await fetch("https://script.google.com/macros/s/AKfycbyR_v0ttNtHx2spJRs__tbdcsJ1PdXPOzKIcM9H7LINbtTvVc9K2DPIR3ngYAXcDNs-Vg/exec", {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" }
       });
-      const linha = li.querySelector('.linha');
-      linha.classList.add('concluida');
-      const spanLapis = linha.querySelector('span:nth-child(4)');
-      const textoObs = spanLapis.textContent.split('✏️')[1].split('—')[0].trim();
-      spanLapis.innerHTML = `✏️ ${textoObs} — <span class="marcacao">${status}</span>`;
+
+      alert(`Status atualizado para "${novoStatus}"`);
+      carregar();
     }
 
-    function limparBusca() {
-      document.getElementById('filtroPalavra').value = '';
-      filtrar();
-    }
-
-    formatarDataPadrao();
-    carregarDados();
+    carregar();
   </script>
 </body>
 </html>
