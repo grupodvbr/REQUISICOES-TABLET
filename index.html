@@ -6,28 +6,120 @@
   <title>Requisições Recebidas</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 10px; }
-    header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    header img { height: 40px; }
-    header h1 { font-size: 1.4em; }
-    .filtros { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
-    .filtros select, .filtros input { padding: 10px; font-size: 1em; border-radius: 6px; border: 1px solid #ccc; }
-    .grupo { background: white; border-radius: 6px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); padding: 10px; }
-    .grupo h3 { background: #007bff; color: white; margin: -10px -10px 10px; padding: 10px; border-radius: 6px 6px 0 0; }
-    .item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; flex-direction: column; }
-    .item strong { font-size: 1.1em; }
-    .info { font-size: 0.9em; color: #555; }
-    .botoes { margin-top: 5px; }
-    .botoes button { padding: 8px 12px; margin-right: 10px; font-size: 1em; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-ok { background: #28a745; color: white; }
-    .btn-nok { background: #dc3545; color: white; }
-    #btnRelatorio { position: fixed; bottom: 15px; right: 15px; background: #007bff; color: white; border: none; padding: 12px 20px; font-size: 1em; border-radius: 6px; cursor: pointer; }
-    #relatorioPDF { display: none; }
-    .titulo-relatorio { text-align: center; font-size: 1.5em; margin-bottom: 20px; }
-    .secao-relatorio { margin-bottom: 20px; }
-    .secao-relatorio h2 { background: #007bff; color: white; padding: 8px; border-radius: 6px; margin-bottom: 10px; }
-    .secao-relatorio ul { list-style: none; padding-left: 0; }
-    .secao-relatorio li { padding: 5px 0; border-bottom: 1px solid #ccc; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 10px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    header img {
+      height: 40px;
+    }
+    header h1 {
+      font-size: 1.4em;
+    }
+    .filtros {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    .filtros select, .filtros input {
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .grupo {
+      background: white;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 10px;
+    }
+    .grupo h3 {
+      background: #007bff;
+      color: white;
+      margin: -10px -10px 10px;
+      padding: 10px;
+      border-radius: 6px 6px 0 0;
+    }
+    .item {
+      border-bottom: 1px solid #eee;
+      padding: 10px 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .item strong {
+      font-size: 1.1em;
+    }
+    .info {
+      font-size: 0.9em;
+      color: #555;
+    }
+    .botoes {
+      margin-top: 5px;
+    }
+    .botoes button {
+      padding: 8px 12px;
+      margin-right: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-ok {
+      background: #28a745;
+      color: white;
+    }
+    .btn-nok {
+      background: #dc3545;
+      color: white;
+    }
+    #btnRelatorio {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 1em;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #relatorioPDF {
+      display: none;
+    }
+    .titulo-relatorio {
+      text-align: center;
+      font-size: 1.5em;
+      margin-bottom: 20px;
+    }
+    .secao-relatorio {
+      margin-bottom: 20px;
+    }
+    .secao-relatorio h2 {
+      background: #007bff;
+      color: white;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .secao-relatorio ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .secao-relatorio li {
+      padding: 5px 0;
+      border-bottom: 1px solid #ccc;
+    }
   </style>
 </head>
 <body>
@@ -160,17 +252,47 @@
       listaEntregues.innerHTML = '';
       listaFaltou.innerHTML = '';
 
-      entregues.forEach(e => {
-        const li = document.createElement("li");
-        li.textContent = `• ${e.item} — ${e.qtd} unidades — ${new Date(e.dataHora).toLocaleString('pt-BR')}`;
-        listaEntregues.appendChild(li);
+      const inicio = document.getElementById("dataInicio").value;
+      const fim = document.getElementById("dataFim").value;
+      const busca = document.getElementById("busca").value.toLowerCase();
+      const statusFiltro = document.getElementById("statusFiltro").value;
+
+      const filtradas = requisicoes.filter(l => {
+        const dataHora = new Date(l[0]);
+        if (inicio && dataHora < new Date(inicio + "T00:00")) return false;
+        if (fim && dataHora > new Date(fim + "T23:59")) return false;
+        if (busca && !l[1].toLowerCase().includes(busca) && !l[6].toLowerCase().includes(busca)) return false;
+        if (statusFiltro && l[7] !== statusFiltro) return false;
+        return true;
       });
 
-      faltaram.forEach(f => {
-        const li = document.createElement("li");
-        li.textContent = `• ${f.item} — ${new Date(f.dataHora).toLocaleString('pt-BR')}`;
-        listaFaltou.appendChild(li);
+      const entreguesFiltrados = entregues.filter(e => {
+        return filtradas.some(f => f[0] === e.dataHora && f[1] === e.item);
       });
+
+      const faltaramFiltrados = faltaram.filter(f => {
+        return filtradas.some(d => d[0] === f.dataHora && d[1] === f.item);
+      });
+
+      if (entreguesFiltrados.length === 0) {
+        listaEntregues.innerHTML = '<li>Nenhum item entregue</li>';
+      } else {
+        entreguesFiltrados.forEach(e => {
+          const li = document.createElement("li");
+          li.textContent = `• ${e.item} — ${e.qtd} unidades — ${new Date(e.dataHora).toLocaleString('pt-BR')}`;
+          listaEntregues.appendChild(li);
+        });
+      }
+
+      if (faltaramFiltrados.length === 0) {
+        listaFaltou.innerHTML = '<li>Nenhum item marcado como faltou</li>';
+      } else {
+        faltaramFiltrados.forEach(f => {
+          const li = document.createElement("li");
+          li.textContent = `• ${f.item} — ${new Date(f.dataHora).toLocaleString('pt-BR')}`;
+          listaFaltou.appendChild(li);
+        });
+      }
 
       const opt = {
         margin: 0.5,
