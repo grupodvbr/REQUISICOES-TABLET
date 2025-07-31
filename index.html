@@ -132,7 +132,7 @@
     let requisicoes = [];
 
     async function carregar() {
-      const res = await fetch("https://script.google.com/macros/s/AKfycbxw1XO5_8_inzujBxlfbLeJkRUj_RpXBb8BeVAhP2J3XHMaQoynPDRm-P7Erpu3BpSa_g/exec");
+      const res = await fetch("https://script.google.com/macros/s/AKfycbz-xym81md3q3X_7MsXEusHlCLDKBPF8UmVQRpz6GNYMks0rZBY-Rik4tHnLHVtTR18RA/exec");
       const dados = await res.json();
       requisicoes = dados.map(l => l.map(c => (c || '').toString().trim()));
       filtrar();
@@ -207,7 +207,7 @@
         quantidadeEntregue
       };
 
-      await fetch("https://script.google.com/macros/s/AKfycbxw1XO5_8_inzujBxlfbLeJkRUj_RpXBb8BeVAhP2J3XHMaQoynPDRm-P7Erpu3BpSa_g/exec", {
+      await fetch("https://script.google.com/macros/s/AKfycbz-xym81md3q3X_7MsXEusHlCLDKBPF8UmVQRpz6GNYMks0rZBY-Rik4tHnLHVtTR18RA/exec", {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: { "Content-Type": "application/json" }
