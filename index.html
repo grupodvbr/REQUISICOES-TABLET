@@ -22,6 +22,7 @@
       gap: 10px;
       margin-bottom: 15px;
     }
+    .filtros select,
     .filtros input {
       padding: 10px;
       font-size: 1em;
@@ -77,12 +78,22 @@
   </style>
 </head>
 <body>
-  <h1>📋 Requisições por Setor</h1>
+  <h1>📋 Requisições</h1>
 
   <div class="filtros">
     <input type="date" id="dataInicio" />
     <input type="date" id="dataFim" />
     <input type="text" id="busca" placeholder="🔍 Buscar item ou observação" />
+    <select id="filtroStatus" onchange="filtrar()">
+      <option value="PROCESSANDO" selected>PROCESSANDO</option>
+      <option value="Entregue">ENTREGUE</option>
+      <option value="Faltou">FALTOU</option>
+      <option value="todos">TODOS</option>
+    </select>
+    <select id="filtroAgrupamento" onchange="filtrar()">
+      <option value="setor" selected>Agrupar por Setor</option>
+      <option value="solicitante">Agrupar por Solicitante</option>
+    </select>
   </div>
 
   <div id="listaRequisicoes"></div>
@@ -101,9 +112,14 @@
       const inicio = document.getElementById("dataInicio").value;
       const fim = document.getElementById("dataFim").value;
       const busca = document.getElementById("busca").value.toLowerCase();
+      const filtroStatus = document.getElementById("filtroStatus").value;
+      const agruparPor = document.getElementById("filtroAgrupamento").value;
 
       const filtradas = requisicoes.filter(l => {
         const dataHora = new Date(l[0]);
+        const statusAtual = (l[7] || "PROCESSANDO").toUpperCase();
+
+        if (filtroStatus !== "todos" && statusAtual !== filtroStatus.toUpperCase()) return false;
         if (inicio && dataHora < new Date(inicio + "T00:00")) return false;
         if (fim && dataHora > new Date(fim + "T23:59")) return false;
         if (busca && !l[1].toLowerCase().includes(busca) && !l[6].toLowerCase().includes(busca)) return false;
@@ -112,20 +128,20 @@
 
       const agrupado = {};
       filtradas.forEach(l => {
-        const setor = l[4];
-        if (!agrupado[setor]) agrupado[setor] = [];
-        agrupado[setor].push(l);
+        const chave = agruparPor === 'solicitante' ? l[5] : l[4];
+        if (!agrupado[chave]) agrupado[chave] = [];
+        agrupado[chave].push(l);
       });
 
       const container = document.getElementById("listaRequisicoes");
       container.innerHTML = '';
 
-      for (const setor in agrupado) {
-        const grupo = document.createElement("div");
-        grupo.className = "grupo";
-        grupo.innerHTML = `<h3>${setor}</h3>`;
+      for (const grupo in agrupado) {
+        const grupoDiv = document.createElement("div");
+        grupoDiv.className = "grupo";
+        grupoDiv.innerHTML = `<h3>${grupo}</h3>`;
 
-        agrupado[setor].forEach(l => {
+        agrupado[grupo].forEach(l => {
           const div = document.createElement("div");
           div.className = "item";
           div.innerHTML = `
@@ -139,10 +155,10 @@
               <button class="btn-nok" onclick="atualizarStatus('${l[0]}', '${l[1]}', 'Faltou')">❌ Faltou</button>
             </div>
           `;
-          grupo.appendChild(div);
+          grupoDiv.appendChild(div);
         });
 
-        container.appendChild(grupo);
+        container.appendChild(grupoDiv);
       }
     }
 
