@@ -87,6 +87,22 @@
       const campoAgrupar = document.getElementById("agruparPor").value;
 
       const filtradas = requisicoes.filter(l => {
+  const dataHora = new Date(l[0]);
+  const statusAtual = l[7] || "";
+
+  const entregue = entregues.find(e => e.item === l[1] && e.dataHora === l[0]);
+  const faltou = faltaram.find(f => f.item === l[1] && f.dataHora === l[0]);
+  const statusEfetivo = entregue ? "Entregue" : (faltou ? "Faltou" : (statusAtual || "Processando"));
+
+  if (inicio && dataHora < new Date(inicio + "T00:00")) return false;
+  if (fim && dataHora > new Date(fim + "T23:59")) return false;
+  if (busca && !l[1].toLowerCase().includes(busca) && !l[6].toLowerCase().includes(busca)) return false;
+  if (status === "Processando" && statusEfetivo !== "Processando") return false;
+  if (status && status !== "Processando" && statusEfetivo !== status) return false;
+
+  return true;
+});
+
         const dataHora = new Date(l[0]);
         const statusAtual = l[7] || "";
 
