@@ -213,13 +213,29 @@
     const endpoint = 'https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec';
     let dadosRequisicoes = [];
 
-    async function carregarRequisicoes() {
-      document.getElementById("overlay-carregando").style.display = "flex";
-      const res = await fetch(`${endpoint}?acao=ler`);
-      dadosRequisicoes = await res.json();
-      filtrarRequisicoes();
-      document.getElementById("overlay-carregando").style.display = "none";
-    }
+ async function carregarRequisicoes() {
+  document.getElementById("overlay-carregando").style.display = "flex";
+  const res = await fetch(`${endpoint}?acao=ler`);
+  const dadosBrutos = await res.json();
+
+  // Converte o array bruto em objetos
+  dadosRequisicoes = dadosBrutos.map((linha, i) => {
+    return {
+      index: i + 2, // +2 porque linha 1 é cabeçalho
+      dataHora: linha[0],
+      item: linha[1],
+      unidade: linha[2],
+      qtd: linha[3],
+      setor: linha[4],
+      solicitante: linha[5],
+      observacoes: linha[6],
+      status: linha[7]
+    };
+  });
+
+  filtrarRequisicoes();
+  document.getElementById("overlay-carregando").style.display = "none";
+}
 
     function formatarDataHora(dataHoraOriginal) {
       if (!dataHoraOriginal) return "";
