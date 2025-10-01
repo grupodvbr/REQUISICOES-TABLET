@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COTAÇÃO • Requisições</title>
+  <style>
+    :root {
+      --cor-azul: #007bff;
+      --cor-vermelho: #dc3545;
+      --cor-cinza: #f1f1f1;
+      --cor-verde: #28a745;
+    }
+    body { margin: 0; font-family: Arial, sans-serif; background: var(--cor-cinza); }
+    header { display: flex; align-items: center; padding: 10px; background: white; border-bottom: 2px solid var(--cor-cinza);}
+    header img { height: 40px; margin-right: 10px;}
+    header h1 { margin: 0; font-size: 1.2em; color: var(--cor-azul);}
+    table { width: 100%; border-collapse: collapse; background: white; font-size: 12px; margin-top: 10px;}
+    thead { background: var(--cor-azul); color: white;}
+    th, td { padding: 6px; border: 1px solid #ddd; text-align: center;}
+    #iniciarCotacao { margin: 15px; padding: 10px 20px; background: var(--cor-azul); color: white; border: none; cursor: pointer; border-radius: 4px; font-size: 14px;}
+    /* Modal */
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 2000;}
+    .modal-content { background: white; padding: 20px; border-radius: 8px; width: 95%; max-height: 90vh; overflow-y: auto;}
+    .fornecedor-card { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin: 10px 0; display: grid; grid-template-columns: repeat(6,1fr); gap: 5px; align-items: center;}
+    .fornecedor-card.melhor { border: 2px solid var(--cor-verde); background: #e6fbe6;}
+    .fornecedor-card h4 { grid-column: 1/-1; margin: 0; text-align: left;}
+    input { padding: 4px; font-size: 12px; text-align: center;}
+    .close-btn { background: var(--cor-vermelho); color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; float: right;}
+    .save-btn { background: var(--cor-verde); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
+    <h1>Itens em Cotação (No Carrinho)</h1>
+  </header>
+
+  <button id="iniciarCotacao" onclick="abrirCotacao()">📊 Iniciar Cotação</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Data e Hora</th>
+        <th>Item</th>
+        <th>Qtd</th>
+        <th>Unidade</th>
+        <th>Setor</th>
+        <th>Solicitante</th>
+        <th>Observações</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaCotacao"></tbody>
+  </table>
+
+  <!-- Modal de Cotação -->
+  <div class="modal" id="modalCotacao">
+    <div class="modal-content">
+      <button class="close-btn" onclick="fecharCotacao()">Fechar ✖</button>
+      <h2>Comparar Cotações</h2>
+      <div id="listaCotacao"></div>
+      <button class="save-btn" onclick="salvarCotacao()">💾 Salvar Cotações</button>
+    </div>
+  </div>
+
+  <script>
+    const endpoint = "https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec";
+    let dadosRequisicoes = [
+      {index:2, item:"Arroz", qtd:10, unidade:"Kg"},
+      {index:3, item:"Feijão", qtd:5, unidade:"Kg"}
+    ]; // mock — depois trocar pelo carregamento real
+
+    let resultadosCotacao = {}; // armazena resultado por item
+
+    function abrirCotacao(){
+      const lista = document.getElementById("listaCotacao");
+      lista.innerHTML = "";
+      dadosRequisicoes.forEach((prod,i)=>{
+        const card = document.createElement("div");
+        card.className = "fornecedor-card";
+        card.id = `card_${i}`;
+        card.innerHTML = `
+          <h4>${prod.item} (${prod.qtd} ${prod.unidade})</h4>
+          <div>Fornecedor 1<br><input type="number" id="preco1_${i}" placeholder="Preço"><br><input type="number" id="qtd1_${i}" placeholder="Qtd"></div>
+          <div>Fornecedor 2<br><input type="number" id="preco2_${i}" placeholder="Preço"><br><input type="number" id="qtd2_${i}" placeholder="Qtd"></div>
+          <div>Fornecedor 3<br><input type="number" id="preco3_${i}" placeholder="Preço"><br><input type="number" id="qtd3_${i}" placeholder="Qtd"></div>
+          <div>Fornecedor 4<br><input type="number" id="preco4_${i}" placeholder="Preço"><br><input type="number" id="qtd4_${i}" placeholder="Qtd"></div>
+          <div id="melhor_${i}" style="grid-column:1/-1;text-align:center;font-weight:bold;"></div>
+        `;
+        lista.appendChild(card);
+        for(let f=1; f<=4; f++){
+          document.getElementById(`preco${f}_${i}`).addEventListener("input", ()=>compararFornecedor(i));
+          document.getElementById(`qtd${f}_${i}`).addEventListener("input", ()=>compararFornecedor(i));
+        }
+      });
+      document.getElementById("modalCotacao").style.display = "flex";
+    }
+
+    function fecharCotacao(){ document.getElementById("modalCotacao").style.display="none"; }
+
+    function compararFornecedor(index){
+      const prod = dadosRequisicoes[index];
+      let melhores = [];
+      for(let f=1; f<=4; f++){
+        const preco = parseFloat(document.getElementById(`preco${f}_${index}`).value);
+        const qtd = parseFloat(document.getElementById(`qtd${f}_${index}`).value);
+        if(preco>0 && qtd>0){
+          const unitario = preco / qtd; // preço unitário
+          const custoTotal = unitario * prod.qtd; // custo para a qtd desejada
+          melhores.push({fornecedor:f, unitario, custoTotal});
+        }
+      }
+      if(melhores.length>0){
+        melhores.sort((a,b)=>a.custoTotal-b.custoTotal);
+        const melhor = melhores[0];
+        document.getElementById(`melhor_${index}`).innerText = 
+          `Mais barato: Fornecedor ${melhor.fornecedor} → R$ ${melhor.custoTotal.toFixed(2)} (R$ ${melhor.unitario.toFixed(2)}/${prod.unidade})`;
+        document.getElementById(`card_${index}`).classList.add("melhor");
+        resultadosCotacao[index] = {
+          index: prod.index,
+          item: prod.item,
+          qtd: prod.qtd,
+          fornecedor: melhor.fornecedor,
+          valorUnitario: melhor.unitario,
+          valorTotal: melhor.custoTotal
+        };
+      }
+    }
+
+    async function salvarCotacao(){
+      for(const i in resultadosCotacao){
+        const r = resultadosCotacao[i];
+        await fetch(endpoint, {
+          method: "POST",
+          body: JSON.stringify({
+            acao:"salvarCotacao",
+            index: r.index,
+            item: r.item,
+            qtd: r.qtd,
+            fornecedor: r.fornecedor,
+            valorUnitario: r.valorUnitario,
+            valorTotal: r.valorTotal
+          })
+        });
+      }
+      alert("Cotações salvas na planilha!");
+      fecharCotacao();
+    }
+  </script>
+</body>
+</html>
