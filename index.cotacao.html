@@ -16,7 +16,6 @@
     header img { height: 40px; margin-right: 10px;}
     header h1 { margin: 0; font-size: 1.2em; color: var(--cor-azul);}
     #iniciarCotacao { margin: 15px; padding: 10px 20px; background: var(--cor-azul); color: white; border: none; cursor: pointer; border-radius: 4px; font-size: 14px;}
-    /* Modal */
     .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 2000;}
     .modal-content { background: white; padding: 20px; border-radius: 8px; width: 95%; max-height: 90vh; overflow-y: auto;}
     .fornecedor-card { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin: 10px 0; display: grid; grid-template-columns: repeat(6,1fr); gap: 5px; align-items: center;}
@@ -26,6 +25,9 @@
     .close-btn { background: var(--cor-vermelho); color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; float: right;}
     .save-btn { background: var(--cor-verde); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 15px; }
     .info { grid-column: 1/-1; font-size: 13px; margin-bottom: 8px; }
+    #novoProdutoForm { background: white; padding: 15px; margin: 10px; border-radius: 6px; }
+    #novoProdutoForm input, #novoProdutoForm button { padding: 6px; margin: 5px; font-size: 12px; }
+    #novoProdutoForm button { background: var(--cor-verde); color: white; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -33,6 +35,15 @@
     <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
     <h1>Itens em Cotação (No Carrinho)</h1>
   </header>
+
+  <!-- Formulário adicionar item manual -->
+  <div id="novoProdutoForm">
+    <h3>Adicionar novo item à cotação</h3>
+    <input type="text" id="novoItem" placeholder="Item" required>
+    <input type="number" id="novoQtd" placeholder="Qtd" min="1" required>
+    <input type="text" id="novoUnidade" placeholder="Unidade" required>
+    <button onclick="adicionarProduto()">➕ Adicionar</button>
+  </div>
 
   <button id="iniciarCotacao" onclick="abrirCotacao()">📊 Iniciar Cotação</button>
 
@@ -47,65 +58,92 @@
   </div>
 
   <script>
-    const endpoint = "https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec";
+    const endpointConsulta = "URL_GAS_CONSULTA";  // GAS que retorna os "NO CARRINHO"
+    const endpointCotacao  = "URL_GAS_COTACAO";   // GAS que salva o JSON da cotação
 
-    // Mock — depois você troca pelo carregamento do endpoint
-    let dadosRequisicoes = [
-      {index:2, dataHora:"2025-10-01 10:00", item:"Arroz", qtd:10, unidade:"Kg", solicitante:"João"},
-      {index:3, dataHora:"2025-10-01 11:30", item:"Feijão", qtd:5, unidade:"Kg", solicitante:"Maria"}
-    ];
-
+    let dadosRequisicoes = [];
     let resultadosCotacao = {};
 
+    // Carregar itens no carrinho
+    async function carregarItens(){
+      const res = await fetch(`${endpointConsulta}?acao=ler`);
+      const dadosBrutos = await res.json();
+      dadosRequisicoes = dadosBrutos
+        .map((linha,i)=>({
+          index: i+2,
+          dataHora: linha[0],
+          item: linha[1],
+          unidade: linha[2],
+          qtd: linha[3],
+          solicitante: linha[5],
+          status: linha[7]
+        }))
+        .filter(r => (r.status||"").toUpperCase()=="NO CARRINHO");
+    }
+
+    // Adicionar item manual
+    function adicionarProduto(){
+      const item = document.getElementById("novoItem").value;
+      const qtd = document.getElementById("novoQtd").value;
+      const unidade = document.getElementById("novoUnidade").value;
+      if(!item || !qtd || !unidade){ alert("Preencha todos os campos!"); return; }
+      dadosRequisicoes.push({
+        index: "manual_"+Date.now(),
+        dataHora: new Date().toISOString(),
+        item, qtd, unidade,
+        solicitante: "USUARIO",
+        status: "NO CARRINHO"
+      });
+      alert("Item adicionado à cotação!");
+    }
+
+    // Abrir modal
     function abrirCotacao(){
       const lista = document.getElementById("listaCotacao");
-      lista.innerHTML = "";
+      lista.innerHTML="";
       dadosRequisicoes.forEach((prod,i)=>{
-        const card = document.createElement("div");
-        card.className = "fornecedor-card";
-        card.id = `card_${i}`;
-        card.innerHTML = `
+        const card=document.createElement("div");
+        card.className="fornecedor-card"; card.id=`card_${i}`;
+        card.innerHTML=`
           <div class="info"><b>Data:</b> ${formatarDataHora(prod.dataHora)} | <b>Item:</b> ${prod.item} | <b>Qtd:</b> ${prod.qtd} ${prod.unidade} | <b>Solicitante:</b> ${prod.solicitante}</div>
-          <div>Fornecedor 1<br><input type="number" id="preco1_${i}" placeholder="Preço"><br><input type="number" id="qtd1_${i}" placeholder="Qtd embalagem"></div>
-          <div>Fornecedor 2<br><input type="number" id="preco2_${i}" placeholder="Preço"><br><input type="number" id="qtd2_${i}" placeholder="Qtd embalagem"></div>
-          <div>Fornecedor 3<br><input type="number" id="preco3_${i}" placeholder="Preço"><br><input type="number" id="qtd3_${i}" placeholder="Qtd embalagem"></div>
-          <div>Fornecedor 4<br><input type="number" id="preco4_${i}" placeholder="Preço"><br><input type="number" id="qtd4_${i}" placeholder="Qtd embalagem"></div>
+          <div>Fornecedor 1<br><input type="number" id="preco1_${i}" placeholder="Preço"><br><input type="number" id="qtd1_${i}" placeholder="Qtd emb."></div>
+          <div>Fornecedor 2<br><input type="number" id="preco2_${i}" placeholder="Preço"><br><input type="number" id="qtd2_${i}" placeholder="Qtd emb."></div>
+          <div>Fornecedor 3<br><input type="number" id="preco3_${i}" placeholder="Preço"><br><input type="number" id="qtd3_${i}" placeholder="Qtd emb."></div>
+          <div>Fornecedor 4<br><input type="number" id="preco4_${i}" placeholder="Preço"><br><input type="number" id="qtd4_${i}" placeholder="Qtd emb."></div>
           <div id="melhor_${i}" style="grid-column:1/-1;text-align:center;font-weight:bold;"></div>
         `;
         lista.appendChild(card);
-        for(let f=1; f<=4; f++){
-          document.getElementById(`preco${f}_${i}`).addEventListener("input", ()=>compararFornecedor(i));
-          document.getElementById(`qtd${f}_${i}`).addEventListener("input", ()=>compararFornecedor(i));
+        for(let f=1;f<=4;f++){
+          document.getElementById(`preco${f}_${i}`).addEventListener("input",()=>compararFornecedor(i));
+          document.getElementById(`qtd${f}_${i}`).addEventListener("input",()=>compararFornecedor(i));
         }
       });
-      document.getElementById("modalCotacao").style.display = "flex";
+      document.getElementById("modalCotacao").style.display="flex";
     }
-
     function fecharCotacao(){ document.getElementById("modalCotacao").style.display="none"; }
 
     function compararFornecedor(index){
-      const prod = dadosRequisicoes[index];
-      let melhores = [];
-      for(let f=1; f<=4; f++){
-        const preco = parseFloat(document.getElementById(`preco${f}_${index}`).value);
-        const qtd = parseFloat(document.getElementById(`qtd${f}_${index}`).value);
+      const prod=dadosRequisicoes[index];
+      let melhores=[];
+      for(let f=1;f<=4;f++){
+        const preco=parseFloat(document.getElementById(`preco${f}_${index}`).value);
+        const qtd=parseFloat(document.getElementById(`qtd${f}_${index}`).value);
         if(preco>0 && qtd>0){
-          const unitario = preco / qtd;
-          const custoTotal = unitario * prod.qtd;
-          melhores.push({fornecedor:f, unitario, custoTotal});
+          const unitario=preco/qtd;
+          const custoTotal=unitario*prod.qtd;
+          melhores.push({fornecedor:f,unitario,custoTotal});
         }
       }
       if(melhores.length>0){
         melhores.sort((a,b)=>a.custoTotal-b.custoTotal);
-        const melhor = melhores[0];
-        document.getElementById(`melhor_${index}`).innerText = 
+        const melhor=melhores[0];
+        document.getElementById(`melhor_${index}`).innerText=
           `Mais barato: Fornecedor ${melhor.fornecedor} → R$ ${melhor.custoTotal.toFixed(2)} (R$ ${melhor.unitario.toFixed(2)}/${prod.unidade})`;
-        document.getElementById(`card_${index}`).classList.add("melhor");
-        resultadosCotacao[index] = {
-          index: prod.index,
+        resultadosCotacao[index]={
           dataHora: prod.dataHora,
           item: prod.item,
           qtd: prod.qtd,
+          unidade: prod.unidade,
           solicitante: prod.solicitante,
           fornecedor: melhor.fornecedor,
           valorUnitario: melhor.unitario,
@@ -115,34 +153,22 @@
     }
 
     async function salvarCotacao(){
-      for(const i in resultadosCotacao){
-        const r = resultadosCotacao[i];
-        await fetch(endpoint, {
-          method: "POST",
-          body: JSON.stringify({
-            acao:"salvarCotacao",
-            index: r.index,
-            dataHora: r.dataHora,
-            item: r.item,
-            qtd: r.qtd,
-            solicitante: r.solicitante,
-            fornecedor: r.fornecedor,
-            valorUnitario: r.valorUnitario,
-            valorTotal: r.valorTotal
-          })
-        });
-      }
-      alert("Cotações salvas na planilha!");
+      const jsonCotacao = JSON.stringify(Object.values(resultadosCotacao));
+      await fetch(endpointCotacao,{
+        method:"POST",
+        body: JSON.stringify({acao:"salvarCotacao",dados:jsonCotacao})
+      });
+      alert("Cotação salva no JSON da planilha!");
       fecharCotacao();
     }
 
-    function formatarDataHora(dataHoraOriginal){
-      try {
-        const d = new Date(dataHoraOriginal);
-        if (isNaN(d)) return dataHoraOriginal;
-        return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-      } catch { return dataHoraOriginal; }
+    function formatarDataHora(dh){
+      try{const d=new Date(dh); if(isNaN(d)) return dh;
+        return `${d.getDate().toString().padStart(2,"0")}/${(d.getMonth()+1).toString().padStart(2,"0")}/${d.getFullYear()} ${d.getHours()}:${d.getMinutes()}`;
+      }catch{return dh;}
     }
+
+    carregarItens();
   </script>
 </body>
 </html>
