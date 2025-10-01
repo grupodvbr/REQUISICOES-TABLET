@@ -15,9 +15,6 @@
     header { display: flex; align-items: center; padding: 10px; background: white; border-bottom: 2px solid var(--cor-cinza);}
     header img { height: 40px; margin-right: 10px;}
     header h1 { margin: 0; font-size: 1.2em; color: var(--cor-azul);}
-    table { width: 100%; border-collapse: collapse; background: white; font-size: 12px; margin-top: 10px;}
-    thead { background: var(--cor-azul); color: white;}
-    th, td { padding: 6px; border: 1px solid #ddd; text-align: center;}
     #iniciarCotacao { margin: 15px; padding: 10px 20px; background: var(--cor-azul); color: white; border: none; cursor: pointer; border-radius: 4px; font-size: 14px;}
     /* Modal */
     .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 2000;}
@@ -28,6 +25,7 @@
     input { padding: 4px; font-size: 12px; text-align: center;}
     .close-btn { background: var(--cor-vermelho); color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; float: right;}
     .save-btn { background: var(--cor-verde); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 15px; }
+    .info { grid-column: 1/-1; font-size: 13px; margin-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -37,21 +35,6 @@
   </header>
 
   <button id="iniciarCotacao" onclick="abrirCotacao()">📊 Iniciar Cotação</button>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Data e Hora</th>
-        <th>Item</th>
-        <th>Qtd</th>
-        <th>Unidade</th>
-        <th>Setor</th>
-        <th>Solicitante</th>
-        <th>Observações</th>
-      </tr>
-    </thead>
-    <tbody id="tabelaCotacao"></tbody>
-  </table>
 
   <!-- Modal de Cotação -->
   <div class="modal" id="modalCotacao">
@@ -65,12 +48,14 @@
 
   <script>
     const endpoint = "https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec";
-    let dadosRequisicoes = [
-      {index:2, item:"Arroz", qtd:10, unidade:"Kg"},
-      {index:3, item:"Feijão", qtd:5, unidade:"Kg"}
-    ]; // mock — depois trocar pelo carregamento real
 
-    let resultadosCotacao = {}; // armazena resultado por item
+    // Mock — depois você troca pelo carregamento do endpoint
+    let dadosRequisicoes = [
+      {index:2, dataHora:"2025-10-01 10:00", item:"Arroz", qtd:10, unidade:"Kg", solicitante:"João"},
+      {index:3, dataHora:"2025-10-01 11:30", item:"Feijão", qtd:5, unidade:"Kg", solicitante:"Maria"}
+    ];
+
+    let resultadosCotacao = {};
 
     function abrirCotacao(){
       const lista = document.getElementById("listaCotacao");
@@ -80,11 +65,11 @@
         card.className = "fornecedor-card";
         card.id = `card_${i}`;
         card.innerHTML = `
-          <h4>${prod.item} (${prod.qtd} ${prod.unidade})</h4>
-          <div>Fornecedor 1<br><input type="number" id="preco1_${i}" placeholder="Preço"><br><input type="number" id="qtd1_${i}" placeholder="Qtd"></div>
-          <div>Fornecedor 2<br><input type="number" id="preco2_${i}" placeholder="Preço"><br><input type="number" id="qtd2_${i}" placeholder="Qtd"></div>
-          <div>Fornecedor 3<br><input type="number" id="preco3_${i}" placeholder="Preço"><br><input type="number" id="qtd3_${i}" placeholder="Qtd"></div>
-          <div>Fornecedor 4<br><input type="number" id="preco4_${i}" placeholder="Preço"><br><input type="number" id="qtd4_${i}" placeholder="Qtd"></div>
+          <div class="info"><b>Data:</b> ${formatarDataHora(prod.dataHora)} | <b>Item:</b> ${prod.item} | <b>Qtd:</b> ${prod.qtd} ${prod.unidade} | <b>Solicitante:</b> ${prod.solicitante}</div>
+          <div>Fornecedor 1<br><input type="number" id="preco1_${i}" placeholder="Preço"><br><input type="number" id="qtd1_${i}" placeholder="Qtd embalagem"></div>
+          <div>Fornecedor 2<br><input type="number" id="preco2_${i}" placeholder="Preço"><br><input type="number" id="qtd2_${i}" placeholder="Qtd embalagem"></div>
+          <div>Fornecedor 3<br><input type="number" id="preco3_${i}" placeholder="Preço"><br><input type="number" id="qtd3_${i}" placeholder="Qtd embalagem"></div>
+          <div>Fornecedor 4<br><input type="number" id="preco4_${i}" placeholder="Preço"><br><input type="number" id="qtd4_${i}" placeholder="Qtd embalagem"></div>
           <div id="melhor_${i}" style="grid-column:1/-1;text-align:center;font-weight:bold;"></div>
         `;
         lista.appendChild(card);
@@ -105,8 +90,8 @@
         const preco = parseFloat(document.getElementById(`preco${f}_${index}`).value);
         const qtd = parseFloat(document.getElementById(`qtd${f}_${index}`).value);
         if(preco>0 && qtd>0){
-          const unitario = preco / qtd; // preço unitário
-          const custoTotal = unitario * prod.qtd; // custo para a qtd desejada
+          const unitario = preco / qtd;
+          const custoTotal = unitario * prod.qtd;
           melhores.push({fornecedor:f, unitario, custoTotal});
         }
       }
@@ -118,8 +103,10 @@
         document.getElementById(`card_${index}`).classList.add("melhor");
         resultadosCotacao[index] = {
           index: prod.index,
+          dataHora: prod.dataHora,
           item: prod.item,
           qtd: prod.qtd,
+          solicitante: prod.solicitante,
           fornecedor: melhor.fornecedor,
           valorUnitario: melhor.unitario,
           valorTotal: melhor.custoTotal
@@ -135,8 +122,10 @@
           body: JSON.stringify({
             acao:"salvarCotacao",
             index: r.index,
+            dataHora: r.dataHora,
             item: r.item,
             qtd: r.qtd,
+            solicitante: r.solicitante,
             fornecedor: r.fornecedor,
             valorUnitario: r.valorUnitario,
             valorTotal: r.valorTotal
@@ -145,6 +134,14 @@
       }
       alert("Cotações salvas na planilha!");
       fecharCotacao();
+    }
+
+    function formatarDataHora(dataHoraOriginal){
+      try {
+        const d = new Date(dataHoraOriginal);
+        if (isNaN(d)) return dataHoraOriginal;
+        return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+      } catch { return dataHoraOriginal; }
     }
   </script>
 </body>
