@@ -217,7 +217,7 @@
   <button id="relatorio" onclick="gerarRelatorio()">📤 Enviar Relatório</button>
 
   <script>
-    const endpoint = 'https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec';
+    const endpoint = 'https://script.google.com/macros/s/AKfycbzUfsuuAH0jPkyeUZ4OOHkTthlsC5QWBKRUv38v81QJmlr-1ipdqTIf13GwjHjFpockwg/exec'; 
     let dadosRequisicoes = [];
 
     async function carregarRequisicoes() {
@@ -226,17 +226,17 @@
       const dadosBrutos = await res.json();
 
       // Converte array bruto em objetos
-      dadosRequisicoes = dadosBrutos.map((linha, i) => {
+      dadosRequisicoes = dadosBrutos.map((linha) => {
         return {
-          index: i + 2, // +2 porque linha 1 é cabeçalho
           dataHora: linha[0],   // Timestamp
-          item: linha[1],       // Item
+          item: linha[1],       // Produto
           unidade: linha[2],    // Unidade
           qtd: linha[3],        // Quantidade
           setor: linha[4],      // Setor
           solicitante: linha[5],// Solicitante
           observacoes: linha[6],// Observações
-          status: linha[7]      // Status
+          status: linha[7],     // Status
+          index: linha[8]       // Linha real
         };
       });
 
@@ -248,22 +248,6 @@
 
       filtrarRequisicoes();
       document.getElementById("overlay-carregando").style.display = "none";
-    }
-
-    function formatarDataHora(dataHoraOriginal) {
-      if (!dataHoraOriginal) return "";
-      try {
-        const d = new Date(dataHoraOriginal);
-        if (isNaN(d)) return dataHoraOriginal; // fallback
-        const dia = String(d.getDate()).padStart(2, '0');
-        const mes = String(d.getMonth() + 1).padStart(2, '0');
-        const ano = d.getFullYear();
-        const horas = String(d.getHours()).padStart(2, '0');
-        const minutos = String(d.getMinutes()).padStart(2, '0');
-        return `${dia}/${mes}/${ano} - ${horas}:${minutos}`;
-      } catch (e) {
-        return dataHoraOriginal;
-      }
     }
 
     function filtrarRequisicoes() {
@@ -296,7 +280,7 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${formatarDataHora(item.dataHora)}</td>
+          <td>${item.dataHora}</td>
           <td>${item.item}</td>
           <td>${item.qtd}</td>
           <td>${item.unidade}</td>
@@ -323,7 +307,6 @@
         method: 'POST',
         body: JSON.stringify({ action: 'atualizar_status', id: index, status })
       });
-      // Atualiza em memória
       const item = dadosRequisicoes.find(r => r.index === index);
       if (item) {
         item.status = status;
@@ -350,16 +333,20 @@
     }
 
     async function liquidarMassa(statusDesejado) {
-      const filtrados = dadosRequisicoes.filter(item => {
-        return document.getElementById('tabelaRequisicoes').innerText.includes(item.item);
-      });
+      const linhasTabela = [...document.querySelectorAll('#tabelaRequisicoes tr')];
+      const idsVisiveis = linhasTabela.map(tr => {
+        const idx = dadosRequisicoes.find(r => r.item === tr.children[1].innerText)?.index;
+        return idx;
+      }).filter(Boolean);
+
       mostrarAlerta("Atualizando status...");
-      for (const item of filtrados) {
+      for (const id of idsVisiveis) {
         await fetch(endpoint, {
           method: 'POST',
-          body: JSON.stringify({ action: 'atualizar_status', id: item.index, status: statusDesejado })
+          body: JSON.stringify({ action: 'atualizar_status', id, status: statusDesejado })
         });
-        item.status = statusDesejado;
+        const item = dadosRequisicoes.find(r => r.index === id);
+        if (item) item.status = statusDesejado;
       }
       filtrarRequisicoes();
       mostrarAlerta("Status em massa atualizado!");
