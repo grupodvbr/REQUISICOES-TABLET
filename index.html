@@ -166,24 +166,33 @@
     <p>Carregando dados...</p>
   </div>
 
-  <div class="filtros">
-    <input type="date" id="dataInicio" placeholder="Data Início">
-    <input type="date" id="dataFim" placeholder="Data Fim">
-    <input type="text" id="filtroItem" placeholder="Item ou Observação">
-    <input type="text" id="filtroSolicitante" placeholder="Solicitante">
-    <select id="filtroStatus">
-      <option value="PENDENTE" selected>PENDENTE</option>
-      <option value="TODOS">TODOS</option>
-      <option value="COMPRADO">COMPRADO</option>
-      <option value="NO CARRINHO">NO CARRINHO</option>
-      <option value="NEGADO">NEGADO</option>
-      <option value="ENTREGUE">ENTREGUE</option>
-      <option value="SEM ESTOQUE">SEM ESTOQUE</option>
-    </select>
-    <button onclick="carregarRequisicoes()">🔍 Filtrar</button>
-    <button onclick="liquidarMassa('ENTREGUE')">📦 Marcar como ENTREGUE</button>
-    <button onclick="window.location.href='index.cotacao.html'">💲 Cotação</button>
-  </div>
+<div class="filtros">
+  <input type="date" id="dataInicio" placeholder="Data Início">
+  <input type="date" id="dataFim" placeholder="Data Fim">
+  <input type="text" id="filtroItem" placeholder="Item ou Observação">
+  <input type="text" id="filtroSolicitante" placeholder="Solicitante">
+  <select id="filtroStatus">
+    <option value="PENDENTE" selected>PENDENTE</option>
+    <option value="TODOS">TODOS</option>
+    <option value="COMPRADO">COMPRADO</option>
+    <option value="NO CARRINHO">NO CARRINHO</option>
+    <option value="NEGADO">NEGADO</option>
+    <option value="ENTREGUE">ENTREGUE</option>
+    <option value="SEM ESTOQUE">SEM ESTOQUE</option>
+  </select>
+  <!-- 🔹 Novo filtro de setor -->
+  <select id="filtroSetor">
+    <option value="">Todos os Setores</option>
+    <option value="Cozinha">Cozinha</option>
+    <option value="Garçons">Garçons</option>
+    <option value="Bar">Bar</option>
+  </select>
+  
+  <button onclick="carregarRequisicoes()">🔍 Filtrar</button>
+  <button onclick="liquidarMassa('ENTREGUE')">📦 Marcar como ENTREGUE</button>
+  <button onclick="window.location.href='index.cotacao.html'">💲 Cotação</button>
+</div>
+
 
   <div class="alerta" id="alertaStatus">Atualizando status...</div>
 
@@ -216,7 +225,7 @@
 
 async function carregarRequisicoes() {
   document.getElementById("overlay-carregando").style.display = "flex";
-  const res = await fetch(`${endpoint}?acao=ler`);
+  const res = await fetch(`${endpoint}?action=listar_requisicoes`);
   const dadosBrutos = await res.json();
 
   // Converte array bruto em objetos
@@ -259,54 +268,57 @@ function formatarDataHora(dataHoraOriginal) {
 }
 
 
-    function filtrarRequisicoes() {
-      const tabela = document.getElementById('tabelaRequisicoes');
-      tabela.innerHTML = '';
-      const filtroStatus = document.getElementById('filtroStatus').value;
-      const filtroItem = document.getElementById('filtroItem').value.toLowerCase();
-      const filtroSolicitante = document.getElementById('filtroSolicitante').value.toLowerCase();
-      const dataInicio = document.getElementById('dataInicio').value;
-      const dataFim = document.getElementById('dataFim').value;
+function filtrarRequisicoes() {
+  const tabela = document.getElementById('tabelaRequisicoes');
+  tabela.innerHTML = '';
+  const filtroStatus = document.getElementById('filtroStatus').value;
+  const filtroItem = document.getElementById('filtroItem').value.toLowerCase();
+  const filtroSolicitante = document.getElementById('filtroSolicitante').value.toLowerCase();
+  const filtroSetor = document.getElementById('filtroSetor').value.toLowerCase();
+  const dataInicio = document.getElementById('dataInicio').value;
+  const dataFim = document.getElementById('dataFim').value;
 
-      const statusValidos = ['COMPRADO', 'NO CARRINHO', 'NEGADO', 'ENTREGUE', 'SEM ESTOQUE'];
+  const statusValidos = ['COMPRADO', 'NO CARRINHO', 'NEGADO', 'ENTREGUE', 'SEM ESTOQUE'];
 
-      dadosRequisicoes.forEach((item) => {
-        const dataFormatada = item.dataHora?.split(' ')[0] || '';
-        const statusAtual = (item.status || '').trim().toUpperCase();
-        const consideraPendente = !statusValidos.includes(statusAtual);
-        const statusFiltrado = filtroStatus.toUpperCase();
+  dadosRequisicoes.forEach((item) => {
+    const dataFormatada = item.dataHora?.split(' ')[0] || '';
+    const statusAtual = (item.status || '').trim().toUpperCase();
+    const consideraPendente = !statusValidos.includes(statusAtual);
+    const statusFiltrado = filtroStatus.toUpperCase();
 
-        if (statusFiltrado !== 'TODOS') {
-          if (statusFiltrado === 'PENDENTE' && !consideraPendente) return;
-          if (statusFiltrado !== 'PENDENTE' && statusAtual !== statusFiltrado) return;
-        }
-        if (filtroItem && !item.item.toLowerCase().includes(filtroItem)) return;
-        if (filtroSolicitante && !item.solicitante.toLowerCase().includes(filtroSolicitante)) return;
-        if (dataInicio && dataFormatada < dataInicio) return;
-        if (dataFim && dataFormatada > dataFim) return;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${formatarDataHora(item.dataHora)}</td>
-          <td>${item.item}</td>
-          <td>${item.qtd}</td>
-          <td>${item.unidade}</td>
-          <td>${item.setor}</td>
-          <td>${item.solicitante}</td>
-          <td>${item.observacoes}</td>
-          <td>
-            <select class="status" onchange="atualizarStatus(${item.index}, this.value)">
-              <option value="PENDENTE" ${statusAtual === 'PENDENTE' || consideraPendente ? 'selected' : ''}>PENDENTE</option>
-              <option value="COMPRADO" ${statusAtual === 'COMPRADO' ? 'selected' : ''}>COMPRADO</option>
-              <option value="NO CARRINHO" ${statusAtual === 'NO CARRINHO' ? 'selected' : ''}>NO CARRINHO</option>
-              <option value="NEGADO" ${statusAtual === 'NEGADO' ? 'selected' : ''}>NEGADO</option>
-              <option value="ENTREGUE" ${statusAtual === 'ENTREGUE' ? 'selected' : ''}>ENTREGUE</option>
-              <option value="SEM ESTOQUE" ${statusAtual === 'SEM ESTOQUE' ? 'selected' : ''}>SEM ESTOQUE</option>
-            </select>
-          </td>`;
-        tabela.appendChild(tr);
-      });
+    if (statusFiltrado !== 'TODOS') {
+      if (statusFiltrado === 'PENDENTE' && !consideraPendente) return;
+      if (statusFiltrado !== 'PENDENTE' && statusAtual !== statusFiltrado) return;
     }
+    if (filtroItem && !item.item.toLowerCase().includes(filtroItem)) return;
+    if (filtroSolicitante && !item.solicitante.toLowerCase().includes(filtroSolicitante)) return;
+    if (filtroSetor && item.setor.toLowerCase() !== filtroSetor) return;
+    if (dataInicio && dataFormatada < dataInicio) return;
+    if (dataFim && dataFormatada > dataFim) return;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${formatarDataHora(item.dataHora)}</td>
+      <td>${item.item}</td>
+      <td>${item.qtd}</td>
+      <td>${item.unidade}</td>
+      <td>${item.setor}</td>
+      <td>${item.solicitante}</td>
+      <td>${item.observacoes}</td>
+      <td>
+        <select class="status" onchange="atualizarStatus(${item.index}, this.value)">
+          <option value="PENDENTE" ${statusAtual === 'PENDENTE' || consideraPendente ? 'selected' : ''}>PENDENTE</option>
+          <option value="COMPRADO" ${statusAtual === 'COMPRADO' ? 'selected' : ''}>COMPRADO</option>
+          <option value="NO CARRINHO" ${statusAtual === 'NO CARRINHO' ? 'selected' : ''}>NO CARRINHO</option>
+          <option value="NEGADO" ${statusAtual === 'NEGADO' ? 'selected' : ''}>NEGADO</option>
+          <option value="ENTREGUE" ${statusAtual === 'ENTREGUE' ? 'selected' : ''}>ENTREGUE</option>
+          <option value="SEM ESTOQUE" ${statusAtual === 'SEM ESTOQUE' ? 'selected' : ''}>SEM ESTOQUE</option>
+        </select>
+      </td>`;
+    tabela.appendChild(tr);
+  });
+}
+
 
 async function atualizarStatus(index, status) {
   mostrarAlerta("Atualizando status...");
@@ -342,39 +354,42 @@ async function atualizarStatus(index, status) {
       document.getElementById("lista-solicitantes").style.display = "none";
     }
 
-    async function liquidarMassa(statusDesejado) {
-      const filtroStatus = document.getElementById('filtroStatus').value;
-      const filtroItem = document.getElementById('filtroItem').value.toLowerCase();
-      const filtroSolicitante = document.getElementById('filtroSolicitante').value.toLowerCase();
-      const dataInicio = document.getElementById('dataInicio').value;
-      const dataFim = document.getElementById('dataFim').value;
-      const statusValidos = ['COMPRADO', 'NO CARRINHO', 'NEGADO', 'ENTREGUE', 'SEM ESTOQUE'];
+async function liquidarMassa(statusDesejado) {
+  const filtroStatus = document.getElementById('filtroStatus').value;
+  const filtroItem = document.getElementById('filtroItem').value.toLowerCase();
+  const filtroSolicitante = document.getElementById('filtroSolicitante').value.toLowerCase();
+  const filtroSetor = document.getElementById('filtroSetor').value.toLowerCase();
+  const dataInicio = document.getElementById('dataInicio').value;
+  const dataFim = document.getElementById('dataFim').value;
+  const statusValidos = ['COMPRADO', 'NO CARRINHO', 'NEGADO', 'ENTREGUE', 'SEM ESTOQUE'];
 
-      const filtrados = dadosRequisicoes.filter((item) => {
-        const dataFormatada = item.dataHora?.split(' ')[0] || '';
-        const statusAtual = (item.status || '').trim().toUpperCase();
-        const consideraPendente = !statusValidos.includes(statusAtual);
+  const filtrados = dadosRequisicoes.filter((item) => {
+    const dataFormatada = item.dataHora?.split(' ')[0] || '';
+    const statusAtual = (item.status || '').trim().toUpperCase();
+    const consideraPendente = !statusValidos.includes(statusAtual);
 
-        if (filtroStatus !== 'TODOS') {
-          if (filtroStatus === 'PENDENTE' && !consideraPendente) return false;
-          if (filtroStatus !== 'PENDENTE' && statusAtual !== filtroStatus.toUpperCase()) return false;
-        }
-        if (filtroItem && !item.item.toLowerCase().includes(filtroItem)) return false;
-        if (filtroSolicitante && !item.solicitante.toLowerCase().includes(filtroSolicitante)) return false;
-        if (dataInicio && dataFormatada < dataInicio) return false;
-        if (dataFim && dataFormatada > dataFim) return false;
-        return true;
-      });
-
-      mostrarAlerta("Atualizando status...");
-      for (const item of filtrados) {
-        await fetch(endpoint, {
-  method: 'POST',
-  body: JSON.stringify({ action: 'atualizar_status', id: item.index, status: statusDesejado })
-});
-      }
-      carregarRequisicoes();
+    if (filtroStatus !== 'TODOS') {
+      if (filtroStatus === 'PENDENTE' && !consideraPendente) return false;
+      if (filtroStatus !== 'PENDENTE' && statusAtual !== filtroStatus.toUpperCase()) return false;
     }
+    if (filtroItem && !item.item.toLowerCase().includes(filtroItem)) return false;
+    if (filtroSolicitante && !item.solicitante.toLowerCase().includes(filtroSolicitante)) return false;
+    if (filtroSetor && item.setor.toLowerCase() !== filtroSetor) return false;
+    if (dataInicio && dataFormatada < dataInicio) return false;
+    if (dataFim && dataFormatada > dataFim) return false;
+    return true;
+  });
+
+  mostrarAlerta("Atualizando status...");
+  for (const item of filtrados) {
+    await fetch(endpoint, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'atualizar_status', id: item.index, status: statusDesejado })
+    });
+  }
+  carregarRequisicoes();
+}
+
 
     function mostrarAlerta(msg) {
       const alerta = document.getElementById('alertaStatus');
