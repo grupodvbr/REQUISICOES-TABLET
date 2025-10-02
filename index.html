@@ -180,12 +180,6 @@
       <option value="ENTREGUE">ENTREGUE</option>
       <option value="SEM ESTOQUE">SEM ESTOQUE</option>
     </select>
-    <select id="filtroSetor">
-  <option value="">Todos os Setores</option>
-  <option value="Cozinha">Cozinha</option>
-  <option value="Garçons">Garçons</option>
-  <option value="Bar">Bar</option>
-</select>
     <button onclick="carregarRequisicoes()">🔍 Filtrar</button>
     <button onclick="liquidarMassa('ENTREGUE')">📦 Marcar como ENTREGUE</button>
     <button onclick="window.location.href='index.cotacao.html'">💲 Cotação</button>
@@ -270,7 +264,6 @@ function formatarDataHora(dataHoraOriginal) {
       tabela.innerHTML = '';
       const filtroStatus = document.getElementById('filtroStatus').value;
       const filtroItem = document.getElementById('filtroItem').value.toLowerCase();
-      const filtroSetor = document.getElementById('filtroSetor').value.toLowerCase();
       const filtroSolicitante = document.getElementById('filtroSolicitante').value.toLowerCase();
       const dataInicio = document.getElementById('dataInicio').value;
       const dataFim = document.getElementById('dataFim').value;
@@ -291,7 +284,6 @@ function formatarDataHora(dataHoraOriginal) {
         if (filtroSolicitante && !item.solicitante.toLowerCase().includes(filtroSolicitante)) return;
         if (dataInicio && dataFormatada < dataInicio) return;
         if (dataFim && dataFormatada > dataFim) return;
-        if (filtroSetor && item.setor.toLowerCase() !== filtroSetor) return;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -350,7 +342,39 @@ async function atualizarStatus(index, status) {
       document.getElementById("lista-solicitantes").style.display = "none";
     }
 
-   async function liquidarMassa(statusDesejado) {
+    async function liquidarMassa(statusDesejado) {
+      const filtroStatus = document.getElementById('filtroStatus').value;
+      const filtroItem = document.getElementById('filtroItem').value.toLowerCase();
+      const filtroSolicitante = document.getElementById('filtroSolicitante').value.toLowerCase();
+      const dataInicio = document.getElementById('dataInicio').value;
+      const dataFim = document.getElementById('dataFim').value;
+      const statusValidos = ['COMPRADO', 'NO CARRINHO', 'NEGADO', 'ENTREGUE', 'SEM ESTOQUE'];
+
+      const filtrados = dadosRequisicoes.filter((item) => {
+        const dataFormatada = item.dataHora?.split(' ')[0] || '';
+        const statusAtual = (item.status || '').trim().toUpperCase();
+        const consideraPendente = !statusValidos.includes(statusAtual);
+
+        if (filtroStatus !== 'TODOS') {
+          if (filtroStatus === 'PENDENTE' && !consideraPendente) return false;
+          if (filtroStatus !== 'PENDENTE' && statusAtual !== filtroStatus.toUpperCase()) return false;
+        }
+        if (filtroItem && !item.item.toLowerCase().includes(filtroItem)) return false;
+        if (filtroSolicitante && !item.solicitante.toLowerCase().includes(filtroSolicitante)) return false;
+        if (dataInicio && dataFormatada < dataInicio) return false;
+        if (dataFim && dataFormatada > dataFim) return false;
+        return true;
+      });
+
+      mostrarAlerta("Atualizando status...");
+      for (const item of filtrados) {
+        await fetch(endpoint, {
+  method: 'POST',
+  body: JSON.stringify({ action: 'atualizar_status', id: item.index, status: statusDesejado })
+});
+      }
+      carregarRequisicoes();
+    }
 
     function mostrarAlerta(msg) {
       const alerta = document.getElementById('alertaStatus');
