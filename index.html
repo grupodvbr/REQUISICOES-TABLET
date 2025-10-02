@@ -171,21 +171,22 @@
     <input type="date" id="dataFim" placeholder="Data Fim">
     <input type="text" id="filtroItem" placeholder="Item ou Observação">
     <input type="text" id="filtroSolicitante" placeholder="Solicitante">
-<select id="filtroStatus" onchange="filtrarRequisicoes()">
-  <option value="PENDENTE" selected>PENDENTE</option>
-  <option value="TODOS">TODOS</option>
-  <option value="COMPRADO">COMPRADO</option>
-  <option value="NO CARRINHO">NO CARRINHO</option>
-  <option value="NEGADO">NEGADO</option>
-  <option value="ENTREGUE">ENTREGUE</option>
-  <option value="SEM ESTOQUE">SEM ESTOQUE</option>
-</select>
 
-<select id="filtroSetor" onchange="filtrarRequisicoes()">
-  <option value="">Todos os Setores</option>
-</select>
+    <select id="filtroStatus" onchange="filtrarRequisicoes()">
+      <option value="PENDENTE" selected>PENDENTE</option>
+      <option value="TODOS">TODOS</option>
+      <option value="COMPRADO">COMPRADO</option>
+      <option value="NO CARRINHO">NO CARRINHO</option>
+      <option value="NEGADO">NEGADO</option>
+      <option value="ENTREGUE">ENTREGUE</option>
+      <option value="SEM ESTOQUE">SEM ESTOQUE</option>
+    </select>
 
-    <button onclick="carregarRequisicoes()">🔍 Filtrar</button>
+    <select id="filtroSetor" onchange="filtrarRequisicoes()">
+      <option value="">Todos os Setores</option>
+    </select>
+
+    <button onclick="filtrarRequisicoes()">🔍 Filtrar</button>
     <button onclick="liquidarMassa('ENTREGUE')">📦 Marcar como ENTREGUE</button>
     <button onclick="window.location.href='index.cotacao.html'">💲 Cotação</button>
   </div>
@@ -219,58 +220,51 @@
     const endpoint = 'https://script.google.com/macros/s/AKfycbxU6j4unKVkkPgePAP4KuI0ojp7EA67ayEkG16LPZdXDf3J-V2jlnXQe9Z4og1KaAIASg/exec';
     let dadosRequisicoes = [];
 
-async function carregarRequisicoes() {
-  document.getElementById("overlay-carregando").style.display = "flex";
-  const res = await fetch(`${endpoint}?acao=ler`);
-  const dadosBrutos = await res.json();
+    async function carregarRequisicoes() {
+      document.getElementById("overlay-carregando").style.display = "flex";
+      const res = await fetch(`${endpoint}?acao=ler`);
+      const dadosBrutos = await res.json();
 
-  // Converte array bruto em objetos
-  dadosRequisicoes = dadosBrutos.map((linha, i) => {
-    return {
-      index: i + 2, // +2 porque linha 1 é cabeçalho
-      dataHora: linha[0],   // Timestamp
-      item: linha[1],       // Item
-      unidade: linha[2],    // Unidade
-      qtd: linha[3],        // Quantidade
-      setor: linha[4],      // Setor
-      solicitante: linha[5],// Solicitante
-      observacoes: linha[6],// Observações
-      status: linha[7]      // Status
-    };
-  });
-   // 🔹 Preencher o filtro de setores dinamicamente
-  const setoresUnicos = [...new Set(dadosRequisicoes.map(r => r.setor).filter(Boolean))];
-  const filtroSetor = document.getElementById("filtroSetor");
-  filtroSetor.innerHTML = `<option value="">Todos os Setores</option>` +
-  setoresUnicos.map(s => `<option value="${s}">${s}</option>`).join('');
+      // Converte array bruto em objetos
+      dadosRequisicoes = dadosBrutos.map((linha, i) => {
+        return {
+          index: i + 2, // +2 porque linha 1 é cabeçalho
+          dataHora: linha[0],   // Timestamp
+          item: linha[1],       // Item
+          unidade: linha[2],    // Unidade
+          qtd: linha[3],        // Quantidade
+          setor: linha[4],      // Setor
+          solicitante: linha[5],// Solicitante
+          observacoes: linha[6],// Observações
+          status: linha[7]      // Status
+        };
+      });
 
-  filtrarRequisicoes();
-  document.getElementById("overlay-carregando").style.display = "none";
+      // 🔹 Preencher o filtro de setores dinamicamente
+      const setoresUnicos = [...new Set(dadosRequisicoes.map(r => r.setor).filter(Boolean))];
+      const filtroSetor = document.getElementById("filtroSetor");
+      filtroSetor.innerHTML = `<option value="">Todos os Setores</option>` +
+        setoresUnicos.map(s => `<option value="${s}">${s}</option>`).join('');
 
-  filtrarRequisicoes();
-  document.getElementById("overlay-carregando").style.display = "none";
-}
+      filtrarRequisicoes();
+      document.getElementById("overlay-carregando").style.display = "none";
+    }
 
-
-function formatarDataHora(dataHoraOriginal) {
-  if (!dataHoraOriginal) return "";
-
-  try {
-    const d = new Date(dataHoraOriginal);
-    if (isNaN(d)) return dataHoraOriginal; // fallback se não conseguir converter
-
-    const dia = String(d.getDate()).padStart(2, '0');
-    const mes = String(d.getMonth() + 1).padStart(2, '0');
-    const ano = d.getFullYear();
-    const horas = String(d.getHours()).padStart(2, '0');
-    const minutos = String(d.getMinutes()).padStart(2, '0');
-
-    return `${dia}/${mes}/${ano} - ${horas}:${minutos}`;
-  } catch (e) {
-    return dataHoraOriginal;
-  }
-}
-
+    function formatarDataHora(dataHoraOriginal) {
+      if (!dataHoraOriginal) return "";
+      try {
+        const d = new Date(dataHoraOriginal);
+        if (isNaN(d)) return dataHoraOriginal; // fallback
+        const dia = String(d.getDate()).padStart(2, '0');
+        const mes = String(d.getMonth() + 1).padStart(2, '0');
+        const ano = d.getFullYear();
+        const horas = String(d.getHours()).padStart(2, '0');
+        const minutos = String(d.getMinutes()).padStart(2, '0');
+        return `${dia}/${mes}/${ano} - ${horas}:${minutos}`;
+      } catch (e) {
+        return dataHoraOriginal;
+      }
+    }
 
     function filtrarRequisicoes() {
       const tabela = document.getElementById('tabelaRequisicoes');
@@ -278,7 +272,7 @@ function formatarDataHora(dataHoraOriginal) {
       const filtroStatus = document.getElementById('filtroStatus').value;
       const filtroItem = document.getElementById('filtroItem').value.toLowerCase();
       const filtroSolicitante = document.getElementById('filtroSolicitante').value.toLowerCase();
-      const filtroSetor = document.getElementById('filtroSetor').value.toLowerCase();
+      const filtroSetor = document.getElementById('filtroSetor').value;
       const dataInicio = document.getElementById('dataInicio').value;
       const dataFim = document.getElementById('dataFim').value;
 
@@ -323,22 +317,20 @@ function formatarDataHora(dataHoraOriginal) {
       });
     }
 
-async function atualizarStatus(index, status) {
-  mostrarAlerta("Atualizando status...");
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'atualizar_status', id: index, status })
-  });
-
-  // Atualiza o objeto em memória sem recarregar tudo
-  const item = dadosRequisicoes.find(r => r.index === index);
-  if (item) {
-    item.status = status;
-  }
-
-  mostrarAlerta("Status atualizado!");
-}
-
+    async function atualizarStatus(index, status) {
+      mostrarAlerta("Atualizando status...");
+      await fetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'atualizar_status', id: index, status })
+      });
+      // Atualiza em memória
+      const item = dadosRequisicoes.find(r => r.index === index);
+      if (item) {
+        item.status = status;
+      }
+      filtrarRequisicoes();
+      mostrarAlerta("Status atualizado!");
+    }
 
     function toggleSolicitantes() {
       const lista = document.getElementById("lista-solicitantes");
@@ -358,37 +350,19 @@ async function atualizarStatus(index, status) {
     }
 
     async function liquidarMassa(statusDesejado) {
-      const filtroStatus = document.getElementById('filtroStatus').value;
-      const filtroItem = document.getElementById('filtroItem').value.toLowerCase();
-      const filtroSolicitante = document.getElementById('filtroSolicitante').value.toLowerCase();
-      const dataInicio = document.getElementById('dataInicio').value;
-      const dataFim = document.getElementById('dataFim').value;
-      const statusValidos = ['COMPRADO', 'NO CARRINHO', 'NEGADO', 'ENTREGUE', 'SEM ESTOQUE'];
-
-      const filtrados = dadosRequisicoes.filter((item) => {
-        const dataFormatada = item.dataHora?.split(' ')[0] || '';
-        const statusAtual = (item.status || '').trim().toUpperCase();
-        const consideraPendente = !statusValidos.includes(statusAtual);
-
-        if (filtroStatus !== 'TODOS') {
-          if (filtroStatus === 'PENDENTE' && !consideraPendente) return false;
-          if (filtroStatus !== 'PENDENTE' && statusAtual !== filtroStatus.toUpperCase()) return false;
-        }
-        if (filtroItem && !item.item.toLowerCase().includes(filtroItem)) return false;
-        if (filtroSolicitante && !item.solicitante.toLowerCase().includes(filtroSolicitante)) return false;
-        if (dataInicio && dataFormatada < dataInicio) return false;
-        if (dataFim && dataFormatada > dataFim) return false;
-        return true;
+      const filtrados = dadosRequisicoes.filter(item => {
+        return document.getElementById('tabelaRequisicoes').innerText.includes(item.item);
       });
-
       mostrarAlerta("Atualizando status...");
       for (const item of filtrados) {
         await fetch(endpoint, {
-  method: 'POST',
-  body: JSON.stringify({ action: 'atualizar_status', id: item.index, status: statusDesejado })
-});
+          method: 'POST',
+          body: JSON.stringify({ action: 'atualizar_status', id: item.index, status: statusDesejado })
+        });
+        item.status = statusDesejado;
       }
-      carregarRequisicoes();
+      filtrarRequisicoes();
+      mostrarAlerta("Status em massa atualizado!");
     }
 
     function mostrarAlerta(msg) {
@@ -399,41 +373,38 @@ async function atualizarStatus(index, status) {
     }
 
     function gerarRelatorio() {
-  const linhas = Array.from(document.querySelectorAll('#tabelaRequisicoes tr')).map(tr => {
-    const colunas = Array.from(tr.children);
-    colunas.pop(); // Remove a última coluna (Status)
-    return colunas.map(td => td.innerText);
-  });
+      const linhas = Array.from(document.querySelectorAll('#tabelaRequisicoes tr')).map(tr => {
+        const colunas = Array.from(tr.children);
+        colunas.pop();
+        return colunas.map(td => td.innerText);
+      });
 
-  let conteudo = `
-    <img src='https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png' height='60'>
-    <br><h2>Relatório de Requisições</h2>
-    <table border='1' cellspacing='0' cellpadding='4'>
-      <thead>
-        <tr>
-          <th>Data e Hora</th>
-          <th>Item</th>
-          <th>Qtd</th>
-          <th>Unidade</th>
-          <th>Setor</th>
-          <th>Solicitante</th>
-          <th>Observações</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
+      let conteudo = `
+        <img src='https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png' height='60'>
+        <br><h2>Relatório de Requisições</h2>
+        <table border='1' cellspacing='0' cellpadding='4'>
+          <thead>
+            <tr>
+              <th>Data e Hora</th>
+              <th>Item</th>
+              <th>Qtd</th>
+              <th>Unidade</th>
+              <th>Setor</th>
+              <th>Solicitante</th>
+              <th>Observações</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      linhas.forEach(l => {
+        conteudo += "<tr>" + l.map(c => `<td>${c}</td>`).join('') + "</tr>";
+      });
+      conteudo += "</tbody></table>";
 
-  linhas.forEach(l => {
-    conteudo += "<tr>" + l.map(c => `<td>${c}</td>`).join('') + "</tr>";
-  });
-
-  conteudo += "</tbody></table>";
-
-  const win = window.open("", "Relatório");
-  win.document.write(`<html><head><title>Relatório</title></head><body>${conteudo}</body></html>`);
-  win.document.close();
-}
-
+      const win = window.open("", "Relatório");
+      win.document.write(`<html><head><title>Relatório</title></head><body>${conteudo}</body></html>`);
+      win.document.close();
+    }
 
     carregarRequisicoes();
   </script>
