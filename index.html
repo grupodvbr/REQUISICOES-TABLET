@@ -229,19 +229,20 @@ async function carregarRequisicoes() {
   const dadosBrutos = await res.json();
 
   // Converte array bruto em objetos
-  dadosRequisicoes = dadosBrutos.map((linha, i) => {
-    return {
-      index: i + 2, // +2 porque linha 1 é cabeçalho
-      dataHora: linha[0],   // Timestamp
-      item: linha[1],       // Item
-      unidade: linha[2],    // Unidade
-      qtd: linha[3],        // Quantidade
-      setor: linha[4],      // Setor
-      solicitante: linha[5],// Solicitante
-      observacoes: linha[6],// Observações
-      status: linha[7]      // Status
-    };
-  });
+dadosRequisicoes = dadosBrutos.map(r => {
+  return {
+    index: r.id,
+    dataHora: r.data,
+    item: r.produto,
+    unidade: r.unidade,
+    qtd: r.quantidade,
+    setor: r.setor,
+    solicitante: r.solicitante,
+    observacoes: r.observacoes,
+    status: r.status
+  };
+});
+
 
   filtrarRequisicoes();
   document.getElementById("overlay-carregando").style.display = "none";
@@ -325,7 +326,7 @@ async function atualizarStatus(index, status) {
   const res = await fetch(endpoint, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ action: 'atualizar_status', id: index, status })
+  body: JSON.stringify({ action: 'atualizar_status', id: item.index, status: statusDesejado })
 });
 
 
