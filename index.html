@@ -171,16 +171,17 @@
     <input type="date" id="dataFim" placeholder="Data Fim">
     <input type="text" id="filtroItem" placeholder="Item ou Observação">
     <input type="text" id="filtroSolicitante" placeholder="Solicitante">
-    <select id="filtroStatus">
-      <option value="PENDENTE" selected>PENDENTE</option>
-      <option value="TODOS">TODOS</option>
-      <option value="COMPRADO">COMPRADO</option>
-      <option value="NO CARRINHO">NO CARRINHO</option>
-      <option value="NEGADO">NEGADO</option>
-      <option value="ENTREGUE">ENTREGUE</option>
-      <option value="SEM ESTOQUE">SEM ESTOQUE</option>
-    </select>
-    <select id="filtroSetor">
+<select id="filtroStatus" onchange="filtrarRequisicoes()">
+  <option value="PENDENTE" selected>PENDENTE</option>
+  <option value="TODOS">TODOS</option>
+  <option value="COMPRADO">COMPRADO</option>
+  <option value="NO CARRINHO">NO CARRINHO</option>
+  <option value="NEGADO">NEGADO</option>
+  <option value="ENTREGUE">ENTREGUE</option>
+  <option value="SEM ESTOQUE">SEM ESTOQUE</option>
+</select>
+
+<select id="filtroSetor" onchange="filtrarRequisicoes()">
   <option value="">Todos os Setores</option>
 </select>
 
@@ -241,7 +242,7 @@ async function carregarRequisicoes() {
   const setoresUnicos = [...new Set(dadosRequisicoes.map(r => r.setor).filter(Boolean))];
   const filtroSetor = document.getElementById("filtroSetor");
   filtroSetor.innerHTML = `<option value="">Todos os Setores</option>` +
-    setoresUnicos.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('');
+  setoresUnicos.map(s => `<option value="${s}">${s}</option>`).join('');
 
   filtrarRequisicoes();
   document.getElementById("overlay-carregando").style.display = "none";
@@ -297,7 +298,7 @@ function formatarDataHora(dataHoraOriginal) {
         if (filtroSolicitante && !item.solicitante.toLowerCase().includes(filtroSolicitante)) return;
         if (dataInicio && dataFormatada < dataInicio) return;
         if (dataFim && dataFormatada > dataFim) return;
-        if (filtroSetor && item.setor.toLowerCase() !== filtroSetor) return;
+        if (filtroSetor && item.setor !== filtroSetor) return;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
