@@ -180,6 +180,10 @@
       <option value="ENTREGUE">ENTREGUE</option>
       <option value="SEM ESTOQUE">SEM ESTOQUE</option>
     </select>
+    <select id="filtroSetor">
+  <option value="">Todos os Setores</option>
+</select>
+
     <button onclick="carregarRequisicoes()">🔍 Filtrar</button>
     <button onclick="liquidarMassa('ENTREGUE')">📦 Marcar como ENTREGUE</button>
     <button onclick="window.location.href='index.cotacao.html'">💲 Cotação</button>
@@ -233,6 +237,14 @@ async function carregarRequisicoes() {
       status: linha[7]      // Status
     };
   });
+   // 🔹 Preencher o filtro de setores dinamicamente
+  const setoresUnicos = [...new Set(dadosRequisicoes.map(r => r.setor).filter(Boolean))];
+  const filtroSetor = document.getElementById("filtroSetor");
+  filtroSetor.innerHTML = `<option value="">Todos os Setores</option>` +
+    setoresUnicos.map(s => `<option value="${s.toLowerCase()}">${s}</option>`).join('');
+
+  filtrarRequisicoes();
+  document.getElementById("overlay-carregando").style.display = "none";
 
   filtrarRequisicoes();
   document.getElementById("overlay-carregando").style.display = "none";
@@ -265,6 +277,7 @@ function formatarDataHora(dataHoraOriginal) {
       const filtroStatus = document.getElementById('filtroStatus').value;
       const filtroItem = document.getElementById('filtroItem').value.toLowerCase();
       const filtroSolicitante = document.getElementById('filtroSolicitante').value.toLowerCase();
+      const filtroSetor = document.getElementById('filtroSetor').value.toLowerCase();
       const dataInicio = document.getElementById('dataInicio').value;
       const dataFim = document.getElementById('dataFim').value;
 
@@ -284,6 +297,7 @@ function formatarDataHora(dataHoraOriginal) {
         if (filtroSolicitante && !item.solicitante.toLowerCase().includes(filtroSolicitante)) return;
         if (dataInicio && dataFormatada < dataInicio) return;
         if (dataFim && dataFormatada > dataFim) return;
+        if (filtroSetor && item.setor.toLowerCase() !== filtroSetor) return;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
